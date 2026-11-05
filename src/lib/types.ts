@@ -99,12 +99,10 @@ export type DemoAccountKey = 'manager' | 'worker1' | 'worker2'
 
 export interface DemoAccount {
   key: DemoAccountKey
-  labelKey: TranslationKey
   name: string
   email: string
   password: string
   role: UserRole
-  blurbKey: TranslationKey
 }
 
 export interface TransitionOption {

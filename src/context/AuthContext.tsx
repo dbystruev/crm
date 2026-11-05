@@ -7,10 +7,9 @@ import {
   type ReactNode,
 } from 'react'
 import { isDemoMode } from '../lib/api'
-import { DEMO_ACCOUNT_BY_KEY } from '../lib/demoAccounts'
-import { demoSignIn, demoSignInAs, demoSignOut, getDemoProfile } from '../lib/demoApi'
+import { demoSignIn, demoSignOut, getDemoProfile } from '../lib/demoApi'
 import { requireSupabase, supabase } from '../lib/supabase'
-import type { DemoAccountKey, Profile } from '../lib/types'
+import type { Profile } from '../lib/types'
 import { errorMessage } from '../lib/utils'
 import { AuthContext, type AuthContextValue } from './auth-context'
 
@@ -168,34 +167,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const signInAs = useCallback(async (key: DemoAccountKey) => {
-    setError(null)
-    const account = DEMO_ACCOUNT_BY_KEY[key]
-
-    if (isDemoMode) {
-      const loadedProfile = demoSignInAs(key)
-      setProfile(loadedProfile)
-      return
-    }
-
-    const client = requireSupabase()
-    try {
-      const { data, error: signInError } = await client.auth.signInWithPassword({
-        email: account.email,
-        password: account.password,
-      })
-      if (signInError) throw signInError
-      if (!data.user) throw new Error('errors.authMissingUser')
-
-      const loadedProfile = await fetchProfile(data.user.id)
-      if (mountedRef.current) setProfile(loadedProfile)
-    } catch (caught) {
-      const message = friendlyAuthError(caught)
-      if (mountedRef.current) setError(message)
-      throw new Error(message)
-    }
-  }, [])
-
   const signOut = useCallback(async () => {
     setError(null)
     if (isDemoMode) {
@@ -250,11 +221,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       error,
       isDemo: isDemoMode,
       signIn,
-      signInAs,
       signOut,
       refreshProfile,
     }),
-    [profile, loading, error, signIn, signInAs, signOut, refreshProfile],
+    [profile, loading, error, signIn, signOut, refreshProfile],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

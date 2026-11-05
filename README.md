@@ -14,7 +14,7 @@ The app works in two modes:
 
 ## Features
 
-- Role-aware login with one-click demo access.
+- Role-aware email/password login.
 - Manager portfolio with sites, progress, open work, overdue work, and review
   counts.
 - Site detail with task filters and a review queue.
@@ -45,7 +45,7 @@ npm install
 npm run dev
 ```
 
-Open the URL printed by Vite, then use any quick-login button.
+Open the URL printed by Vite, then sign in with one of the demo accounts below.
 
 No `.env` file is needed. The demo backend seeds three sites, thirteen tasks,
 and realistic history in the browser.
@@ -151,10 +151,6 @@ VITE_SUPABASE_ANON_KEY=your-anon-or-publishable-key
 
 Restart the dev server after changing env values.
 
-`VITE_SHOW_DEMO_LOGIN` is optional. It defaults to `false` when Supabase is
-configured. Set it to `true` only on a seeded demo/staging project if you want
-the one-click credential buttons there. Demo mode always shows them.
-
 ### 5. Create real users
 
 There is no sign-up screen. Create teammates in **Authentication → Users** in
@@ -184,9 +180,8 @@ promote a user.
 npm run dev
 ```
 
-The login page should show a **Connected to Supabase** badge. If the quick-login
-buttons are missing, that is expected: set `VITE_SHOW_DEMO_LOGIN=true` for a
-seeded staging project, or sign in with a real account.
+The login page should show a **Connected to Supabase** badge. Sign in with a
+real account or with one of the seeded demo accounts.
 
 ## Roles and workflow
 
@@ -245,8 +240,7 @@ rejected by a database trigger even if someone calls the API directly.
 - **The public Supabase key is not a password.** It only identifies the project.
   Row-level security and triggers protect the data. Never put the `service_role`
   key in a Vite app: all `VITE_*` values are included in the browser bundle.
-- **Demo credentials are public.** Never run `supabase/seed.sql` in production,
-  and keep `VITE_SHOW_DEMO_LOGIN=false` on production deployments.
+- **Demo credentials are public.** Never run `supabase/seed.sql` in production.
 
 For a real rollout, also disable public sign-ups, configure Supabase Auth email
 confirmation, set the Site URL and redirect URLs for your deployment domain, and
@@ -307,13 +301,9 @@ a fallback to `index.html` for unknown paths:
 
 Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in the hosting provider's
 build environment. Vite bakes these values in at build time, so redeploy after
-changing them. Keep `VITE_SHOW_DEMO_LOGIN` unset or `false` in production.
+changing them.
 
 ## Troubleshooting
-
-**Quick-login buttons are missing in live mode.** That is the secure default.
-Set `VITE_SHOW_DEMO_LOGIN=true` only for a staging project seeded with demo
-accounts.
 
 **"Email or password is incorrect" with demo accounts.** The live project has
 not run `supabase/seed.sql`, or the seed was run in a different project. Confirm

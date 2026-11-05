@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import type { DemoAccountKey, Profile } from '../lib/types'
+import type { Profile } from '../lib/types'
 
 export interface AuthContextValue {
   profile: Profile | null
@@ -7,7 +7,6 @@ export interface AuthContextValue {
   error: string | null
   isDemo: boolean
   signIn: (email: string, password: string) => Promise<void>
-  signInAs: (key: DemoAccountKey) => Promise<void>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
 }

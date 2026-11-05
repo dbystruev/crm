@@ -11,8 +11,7 @@
 --   worker2@buddian.com  / Crm2026!Worker2
 --
 -- Run AFTER 20260101_init.sql (and 20260102_localized_content.sql on projects
--- created before localized content was added). The quick-login buttons use these
--- credentials.
+-- Demo accounts use these credentials.
 -- =============================================================================
 
 begin;

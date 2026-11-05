@@ -28,7 +28,7 @@ const ERROR_KEYS_BY_MESSAGE: Record<string, TranslationKey> = {
   'Could not update the task status.': 'errors.updateStatus',
   'Could not load the task history.': 'errors.loadHistory',
 
-  'Those credentials do not match a demo account. Use one of the quick-login accounts.':
+  'Those credentials do not match a demo account. Use one of the demo accounts documented in the README.':
     'errors.demoCredentials',
   'Demo account not found.': 'errors.demoAccountNotFound',
   'Only managers can perform this action.': 'errors.managerOnly',

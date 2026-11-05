@@ -2,25 +2,19 @@ import { useState, type FormEvent } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
-  ArrowUpRight,
   CheckCircle2,
   Eye,
   EyeOff,
-  HardHat,
   LockKeyhole,
   Mail,
   RotateCcw,
   ShieldCheck,
-  Sparkles,
 } from 'lucide-react'
 import { useAuth } from '../context/auth-context'
 import { useLanguage } from '../i18n/language-context'
-import { DEMO_ACCOUNTS, SHOW_DEMO_LOGIN } from '../lib/demoAccounts'
-import type { DemoAccount, DemoAccountKey } from '../lib/types'
 import { cn } from '../lib/utils'
-import { Avatar } from '../components/Avatar'
 import { Button } from '../components/Button'
-import { InlineError, LoadingScreen, Spinner } from '../components/Feedback'
+import { InlineError, LoadingScreen } from '../components/Feedback'
 import { LanguageSwitcher } from '../components/LanguageSwitcher'
 import { Logo } from '../components/Logo'
 
@@ -55,100 +49,8 @@ function FlowNode({
   )
 }
 
-function QuickAccountButton({
-  account,
-  pending,
-  disabled,
-  onClick,
-  variant,
-}: {
-  account: DemoAccount
-  pending: boolean
-  disabled: boolean
-  onClick: () => void
-  variant: 'manager' | 'worker'
-}) {
-  const { t } = useLanguage()
-  const isManager = variant === 'manager'
-  const RoleIcon = isManager ? ShieldCheck : HardHat
-  const roleLabel = account.role === 'manager' ? t('roles.manager') : t('roles.worker')
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        'group relative flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition duration-200 disabled:cursor-wait disabled:opacity-70',
-        isManager
-          ? 'border-ink bg-ink text-canvas shadow-sm hover:-translate-y-0.5 hover:shadow-lift'
-          : 'border-line-strong/80 bg-paper text-ink hover:-translate-y-0.5 hover:border-ink/25 hover:shadow-card',
-      )}
-    >
-      <Avatar
-        name={account.name}
-        seed={account.email}
-        size={isManager ? 'lg' : 'md'}
-        className={isManager ? 'ring-ink' : 'ring-paper'}
-      />
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className={cn('text-xs font-bold', isManager ? 'text-canvas' : 'text-ink')}>
-            {t(account.labelKey)}
-          </span>
-          <span
-            className={cn(
-              'inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 font-mono text-[7.5px] font-medium tracking-[0.08em] uppercase',
-              isManager ? 'bg-white/10 text-canvas/55' : 'bg-canvas-deep/70 text-muted',
-            )}
-          >
-            <RoleIcon size={8} />
-            {roleLabel}
-          </span>
-        </div>
-        <p
-          className={cn(
-            'mt-0.5 truncate text-[11px]',
-            isManager ? 'text-canvas/65' : 'text-muted',
-          )}
-        >
-          {account.name}
-          <span className={isManager ? 'text-canvas/35' : 'text-faint'}>
-            {' '}
-            · {t(account.blurbKey)}
-          </span>
-        </p>
-        <p
-          className={cn(
-            'mt-0.5 truncate font-mono text-[9px]',
-            isManager ? 'text-canvas/40' : 'text-faint',
-          )}
-        >
-          {account.email}
-        </p>
-      </div>
-      <span
-        className={cn(
-          'grid size-8 shrink-0 place-items-center rounded-full transition',
-          isManager
-            ? 'bg-white/10 text-canvas group-hover:bg-accent group-hover:text-white'
-            : 'bg-canvas text-muted group-hover:bg-accent group-hover:text-white',
-        )}
-      >
-        {pending ? (
-          <Spinner size={14} />
-        ) : isManager ? (
-          <ArrowRight size={15} />
-        ) : (
-          <ArrowUpRight size={15} />
-        )}
-      </span>
-    </button>
-  )
-}
-
 export function LoginPage() {
-  const { profile, loading, isDemo, signIn, signInAs } = useAuth()
+  const { profile, loading, isDemo, signIn } = useAuth()
   const { t, path, errorText } = useLanguage()
   const navigate = useNavigate()
   const location = useLocation()
@@ -157,7 +59,6 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [pendingAccount, setPendingAccount] = useState<DemoAccountKey | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const requestedPath = (location.state as { from?: string } | null)?.from
@@ -170,22 +71,6 @@ export function LoginPage() {
 
   if (profile) {
     return <Navigate to={targetPath} replace />
-  }
-
-  const showQuickLogin = isDemo || SHOW_DEMO_LOGIN
-  const busy = submitting || pendingAccount !== null
-
-  const handleQuickLogin = async (account: DemoAccount) => {
-    setError(null)
-    setPendingAccount(account.key)
-    try {
-      await signInAs(account.key)
-      navigate(targetPath, { replace: true })
-    } catch (caught) {
-      setError(errorText(caught, 'login.error.demo'))
-    } finally {
-      setPendingAccount(null)
-    }
   }
 
   const handleEmailSignIn = async (event: FormEvent) => {
@@ -201,9 +86,6 @@ export function LoginPage() {
       setSubmitting(false)
     }
   }
-
-  const managerAccount = DEMO_ACCOUNTS.find((account) => account.key === 'manager')!
-  const workerAccounts = DEMO_ACCOUNTS.filter((account) => account.key !== 'manager')
 
   return (
     <div className="min-h-dvh bg-canvas lg:grid lg:grid-cols-[1.05fr_1fr]">
@@ -313,50 +195,6 @@ export function LoginPage() {
           </div>
 
           <div className="rounded-[1.75rem] border border-white/80 bg-paper/90 p-5 shadow-card backdrop-blur-sm sm:p-7">
-            {showQuickLogin ? (
-              <div>
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-mono text-[9px] font-semibold tracking-[0.16em] text-muted uppercase">
-                    {t('login.oneClick')}
-                  </p>
-                  <span className="flex items-center gap-1 rounded-full bg-accent-soft px-2 py-1 font-mono text-[8px] font-medium tracking-[0.08em] text-accent-dark uppercase">
-                    <Sparkles size={9} />
-                    {t('login.noPassword')}
-                  </span>
-                </div>
-
-                <div className="mt-3 space-y-2">
-                  <QuickAccountButton
-                    account={managerAccount}
-                    pending={pendingAccount === 'manager'}
-                    disabled={busy}
-                    onClick={() => void handleQuickLogin(managerAccount)}
-                    variant="manager"
-                  />
-                  <div className="space-y-2">
-                    {workerAccounts.map((account) => (
-                      <QuickAccountButton
-                        key={account.key}
-                        account={account}
-                        pending={pendingAccount === account.key}
-                        disabled={busy}
-                        onClick={() => void handleQuickLogin(account)}
-                        variant="worker"
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div className="my-6 flex items-center gap-3">
-                  <span className="h-px flex-1 bg-line" />
-                  <span className="font-mono text-[8px] font-medium tracking-[0.14em] text-faint uppercase">
-                    {t('login.orEmail')}
-                  </span>
-                  <span className="h-px flex-1 bg-line" />
-                </div>
-              </div>
-            ) : null}
-
             <form onSubmit={handleEmailSignIn} className="space-y-4">
               {error ? <InlineError>{error}</InlineError> : null}
 
