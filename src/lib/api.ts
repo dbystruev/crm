@@ -38,10 +38,10 @@ const OBJECT_SELECT = `
 function friendlyDatabaseError(message: string | undefined, fallback: string) {
   if (!message) return new Error(fallback)
   if (message.includes('row-level security policy')) {
-    return new Error('You do not have permission to perform this action.')
+    return new Error('errors.permission')
   }
   if (message.includes('invalid input value for enum')) {
-    return new Error('That status change is not valid for this task.')
+    return new Error('errors.invalidStatus')
   }
   return new Error(message)
 }
@@ -54,7 +54,7 @@ async function requireUserId() {
   } = await client.auth.getUser()
 
   if (error || !user) {
-    throw new Error('Your session has expired. Please sign in again.')
+    throw new Error('errors.sessionExpired')
   }
   return user.id
 }
@@ -67,7 +67,7 @@ const supabaseApi: CrmApi = {
       .select(OBJECT_SELECT)
       .order('created_at', { ascending: false })
 
-    if (error) throw friendlyDatabaseError(error.message, 'Could not load objects.')
+    if (error) throw friendlyDatabaseError(error.message, 'errors.loadObjects')
     return (data ?? []) as unknown as ObjectWithTasks[]
   },
 
@@ -79,8 +79,8 @@ const supabaseApi: CrmApi = {
       .eq('id', objectId)
       .maybeSingle()
 
-    if (error) throw friendlyDatabaseError(error.message, 'Could not load this object.')
-    if (!data) throw new Error('Object not found, or you do not have access to it.')
+    if (error) throw friendlyDatabaseError(error.message, 'errors.loadObject')
+    if (!data) throw new Error('errors.objectNotFound')
     return data as unknown as ObjectWithTasks
   },
 
@@ -99,7 +99,7 @@ const supabaseApi: CrmApi = {
       .eq('assignee_id', userId)
       .order('due_date', { ascending: true, nullsFirst: false })
 
-    if (error) throw friendlyDatabaseError(error.message, 'Could not load your tasks.')
+    if (error) throw friendlyDatabaseError(error.message, 'errors.loadTasks')
     return (data ?? []) as unknown as TaskWithRelations[]
   },
 
@@ -110,7 +110,7 @@ const supabaseApi: CrmApi = {
       .select('id, full_name, role, created_at')
       .order('full_name', { ascending: true })
 
-    if (error) throw friendlyDatabaseError(error.message, 'Could not load team profiles.')
+    if (error) throw friendlyDatabaseError(error.message, 'errors.loadProfiles')
     return (data ?? []) as Profile[]
   },
 
@@ -128,7 +128,7 @@ const supabaseApi: CrmApi = {
       .select()
       .single()
 
-    if (error) throw friendlyDatabaseError(error.message, 'Could not create the object.')
+    if (error) throw friendlyDatabaseError(error.message, 'errors.saveObject')
     return data as ConstructionObject
   },
 
@@ -145,7 +145,7 @@ const supabaseApi: CrmApi = {
       .select()
       .single()
 
-    if (error) throw friendlyDatabaseError(error.message, 'Could not update the object.')
+    if (error) throw friendlyDatabaseError(error.message, 'errors.saveObject')
     return data as ConstructionObject
   },
 
@@ -165,7 +165,7 @@ const supabaseApi: CrmApi = {
       .select()
       .single()
 
-    if (error) throw friendlyDatabaseError(error.message, 'Could not create the task.')
+    if (error) throw friendlyDatabaseError(error.message, 'errors.saveTask')
     return data as Task
   },
 
@@ -183,7 +183,7 @@ const supabaseApi: CrmApi = {
       .select()
       .single()
 
-    if (error) throw friendlyDatabaseError(error.message, 'Could not update the task.')
+    if (error) throw friendlyDatabaseError(error.message, 'errors.saveTask')
     return data as Task
   },
 
@@ -199,7 +199,7 @@ const supabaseApi: CrmApi = {
       .select()
       .single()
 
-    if (error) throw friendlyDatabaseError(error.message, 'Could not update the task status.')
+    if (error) throw friendlyDatabaseError(error.message, 'errors.updateStatus')
     return data as Task
   },
 
@@ -216,7 +216,7 @@ const supabaseApi: CrmApi = {
       .eq('task_id', taskId)
       .order('created_at', { ascending: true })
 
-    if (error) throw friendlyDatabaseError(error.message, 'Could not load the task history.')
+    if (error) throw friendlyDatabaseError(error.message, 'errors.loadHistory')
     return (data ?? []) as unknown as TaskHistoryEntry[]
   },
 }

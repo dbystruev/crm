@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { AlertTriangle, CheckCircle2, Info, X } from 'lucide-react'
+import { useLanguage } from '../i18n/language-context'
 import { cn } from '../lib/utils'
 import { ToastContext, type ToastOptions, type ToastTone } from './toast-context'
 
@@ -32,6 +33,7 @@ const toneStyles: Record<
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const { t } = useLanguage()
   const [items, setItems] = useState<ToastItem[]>([])
   const timers = useRef<number[]>([])
 
@@ -66,7 +68,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         <div
           className="pointer-events-none fixed right-4 bottom-20 z-[120] flex w-[min(370px,calc(100vw-2rem))] flex-col gap-2.5 md:bottom-6"
           aria-live="polite"
-          aria-label="Notifications"
+          aria-label={t('common.notifications')}
         >
           {items.map((item) => {
             const tone = toneStyles[item.tone ?? 'success']
@@ -90,7 +92,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   type="button"
                   onClick={() => dismiss(item.id)}
                   className="absolute top-3 right-3 grid size-7 place-items-center rounded-full text-faint transition hover:bg-canvas hover:text-ink"
-                  aria-label="Dismiss notification"
+                  aria-label={t('common.dismissNotification')}
                 >
                   <X size={14} />
                 </button>

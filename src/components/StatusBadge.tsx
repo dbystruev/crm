@@ -1,3 +1,4 @@
+import { useLanguage } from '../i18n/language-context'
 import { STATUS_META } from '../lib/status'
 import { badgeStyles } from '../lib/status-styles'
 import type { TaskStatus } from '../lib/types'
@@ -16,6 +17,7 @@ export function StatusBadge({
   withDot = true,
   className,
 }: StatusBadgeProps) {
+  const { t } = useLanguage()
   const styles = badgeStyles[status]
 
   return (
@@ -28,7 +30,7 @@ export function StatusBadge({
       )}
     >
       {withDot ? <span className={cn('size-1.5 rounded-full', styles.dot)} /> : null}
-      {STATUS_META[status].label}
+      {t(STATUS_META[status].labelKey)}
     </span>
   )
 }

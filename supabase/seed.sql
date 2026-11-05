@@ -2,8 +2,13 @@
 -- Objects & Tasks — optional demo seed
 --
 -- ⚠️  DEVELOPMENT / DEMO ONLY.
--- Creates three known accounts (password: BuildDemo123!) plus sample objects,
--- tasks, and status history. Never run this against a production project.
+-- Creates three known accounts plus sample objects, tasks, and status history.
+-- Never run this against a production project.
+--
+-- Demo credentials:
+--   manager@bystruev.com / Crm2026!Manager
+--   worker1@hurated.com  / Crm2026!Worker1
+--   worker2@buddian.com  / Crm2026!Worker2
 --
 -- Run AFTER 20260101_init.sql. The quick-login buttons use these credentials.
 -- =============================================================================
@@ -37,8 +42,8 @@ values
     '11111111-1111-4111-8111-111111111111',
     'authenticated',
     'authenticated',
-    'manager@objects.test',
-    extensions.crypt('BuildDemo123!', extensions.gen_salt('bf')),
+    'manager@bystruev.com',
+    extensions.crypt('Crm2026!Manager', extensions.gen_salt('bf')),
     now(),
     now(),
     '{"provider":"email","providers":["email"]}'::jsonb,
@@ -55,8 +60,8 @@ values
     '22222222-2222-4222-8222-222222222222',
     'authenticated',
     'authenticated',
-    'worker1@objects.test',
-    extensions.crypt('BuildDemo123!', extensions.gen_salt('bf')),
+    'worker1@hurated.com',
+    extensions.crypt('Crm2026!Worker1', extensions.gen_salt('bf')),
     now(),
     now(),
     '{"provider":"email","providers":["email"]}'::jsonb,
@@ -73,8 +78,8 @@ values
     '33333333-3333-4333-8333-333333333333',
     'authenticated',
     'authenticated',
-    'worker2@objects.test',
-    extensions.crypt('BuildDemo123!', extensions.gen_salt('bf')),
+    'worker2@buddian.com',
+    extensions.crypt('Crm2026!Worker2', extensions.gen_salt('bf')),
     now(),
     now(),
     '{"provider":"email","providers":["email"]}'::jsonb,
@@ -88,18 +93,35 @@ values
   )
 on conflict (id) do nothing;
 
--- Keep re-runs of the seed usable with the documented demo password.
+-- Keep re-runs of the seed usable with the documented demo credentials.
+-- The email is refreshed too, so an existing project created with older demo
+-- addresses is migrated by running this file again.
 update auth.users
 set
-  encrypted_password = extensions.crypt('BuildDemo123!', extensions.gen_salt('bf')),
+  email = 'manager@bystruev.com',
+  encrypted_password = extensions.crypt('Crm2026!Manager', extensions.gen_salt('bf')),
   email_confirmed_at = now(),
   banned_until = null,
   updated_at = now()
-where id in (
-  '11111111-1111-4111-8111-111111111111',
-  '22222222-2222-4222-8222-222222222222',
-  '33333333-3333-4333-8333-333333333333'
-);
+where id = '11111111-1111-4111-8111-111111111111';
+
+update auth.users
+set
+  email = 'worker1@hurated.com',
+  encrypted_password = extensions.crypt('Crm2026!Worker1', extensions.gen_salt('bf')),
+  email_confirmed_at = now(),
+  banned_until = null,
+  updated_at = now()
+where id = '22222222-2222-4222-8222-222222222222';
+
+update auth.users
+set
+  email = 'worker2@buddian.com',
+  encrypted_password = extensions.crypt('Crm2026!Worker2', extensions.gen_salt('bf')),
+  email_confirmed_at = now(),
+  banned_until = null,
+  updated_at = now()
+where id = '33333333-3333-4333-8333-333333333333';
 
 insert into auth.identities (
   id,
@@ -116,7 +138,7 @@ values
     gen_random_uuid(),
     '11111111-1111-4111-8111-111111111111',
     '11111111-1111-4111-8111-111111111111',
-    '{"sub":"11111111-1111-4111-8111-111111111111","email":"manager@objects.test","email_verified":true}'::jsonb,
+    '{"sub":"11111111-1111-4111-8111-111111111111","email":"manager@bystruev.com","email_verified":true}'::jsonb,
     'email',
     now(),
     now(),
@@ -126,7 +148,7 @@ values
     gen_random_uuid(),
     '22222222-2222-4222-8222-222222222222',
     '22222222-2222-4222-8222-222222222222',
-    '{"sub":"22222222-2222-4222-8222-222222222222","email":"worker1@objects.test","email_verified":true}'::jsonb,
+    '{"sub":"22222222-2222-4222-8222-222222222222","email":"worker1@hurated.com","email_verified":true}'::jsonb,
     'email',
     now(),
     now(),
@@ -136,13 +158,33 @@ values
     gen_random_uuid(),
     '33333333-3333-4333-8333-333333333333',
     '33333333-3333-4333-8333-333333333333',
-    '{"sub":"33333333-3333-4333-8333-333333333333","email":"worker2@objects.test","email_verified":true}'::jsonb,
+    '{"sub":"33333333-3333-4333-8333-333333333333","email":"worker2@buddian.com","email_verified":true}'::jsonb,
     'email',
     now(),
     now(),
     now()
   )
 on conflict do nothing;
+
+-- Keep existing email identities in sync when the seed is re-run on a project
+-- created with older demo addresses.
+update auth.identities
+set
+  identity_data = jsonb_set(identity_data, '{email}', '"manager@bystruev.com"'::jsonb),
+  updated_at = now()
+where user_id = '11111111-1111-4111-8111-111111111111' and provider = 'email';
+
+update auth.identities
+set
+  identity_data = jsonb_set(identity_data, '{email}', '"worker1@hurated.com"'::jsonb),
+  updated_at = now()
+where user_id = '22222222-2222-4222-8222-222222222222' and provider = 'email';
+
+update auth.identities
+set
+  identity_data = jsonb_set(identity_data, '{email}', '"worker2@buddian.com"'::jsonb),
+  updated_at = now()
+where user_id = '33333333-3333-4333-8333-333333333333' and provider = 'email';
 
 -- The auth trigger creates worker profiles. Promote the manager and keep names
 -- in sync with the seeded auth metadata.

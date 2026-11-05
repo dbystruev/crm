@@ -16,24 +16,19 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/auth-context'
 import { useAsyncData } from '../hooks/useAsyncData'
+import { useLanguage } from '../i18n/language-context'
 import { crm } from '../lib/api'
 import { OPEN_STATUSES } from '../lib/status'
 import type { ConstructionObject, ObjectWithTasks } from '../lib/types'
-import {
-  cn,
-  dueDateInfo,
-  formatDate,
-  getTodayLabel,
-  greeting,
-  pluralize,
-  progressPercent,
-} from '../lib/utils'
+import { cn, progressPercent } from '../lib/utils'
 import { AvatarStack } from '../components/Avatar'
 import { Button } from '../components/Button'
 import { EmptyState, ErrorPanel, Skeleton, Spinner } from '../components/Feedback'
 import { ObjectModal } from '../components/ObjectModal'
 
 type ObjectFilter = 'all' | 'active' | 'complete'
+
+const TODAY_ISO = new Date().toISOString()
 
 const coverThemes = [
   {
@@ -102,6 +97,7 @@ function ObjectCard({
   onEdit: (object: ConstructionObject) => void
   canEdit: boolean
 }) {
+  const { t, path, dueDateInfo } = useLanguage()
   const theme = coverThemes[index % coverThemes.length]
   const completed = object.tasks.filter((task) => task.status === 'accepted').length
   const open = object.tasks.filter((task) => OPEN_STATUSES.includes(task.status)).length
@@ -119,11 +115,11 @@ function ObjectCard({
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-card border border-line/80 bg-paper shadow-card transition duration-300 hover:-translate-y-1 hover:border-line-strong hover:shadow-lift focus-within:ring-2 focus-within:ring-accent/35">
       <Link
-        to={`/objects/${object.id}`}
+        to={path(`/objects/${object.id}`)}
         className="absolute inset-0 z-10 rounded-card focus-visible:outline-none"
-        aria-label={`Open ${object.name}`}
+        aria-label={t('objects.card.open', { name: object.name })}
       >
-        <span className="sr-only">Open {object.name}</span>
+        <span className="sr-only">{t('objects.card.open', { name: object.name })}</span>
       </Link>
 
       <div className={cn('relative h-36 overflow-hidden', theme.cover)}>
@@ -143,7 +139,7 @@ function ObjectCard({
         <div className="absolute top-3.5 left-4 flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-2.5 py-1 font-mono text-[8px] font-medium tracking-[0.1em] text-white/75 uppercase backdrop-blur-sm">
             <span className={cn('size-1.5 rounded-full', isComplete ? 'bg-emerald-400' : 'bg-amber-300')} />
-            {isComplete ? 'Completed' : 'Active site'}
+            {isComplete ? t('objects.card.completed') : t('objects.card.activeSite')}
           </span>
           <span className="font-mono text-[8px] tracking-[0.1em] text-white/35">
             OBJ-{String(index + 1).padStart(2, '0')}
@@ -155,8 +151,8 @@ function ObjectCard({
             type="button"
             onClick={() => onEdit(object)}
             className="absolute top-3 right-3 z-20 grid size-8 place-items-center rounded-full border border-white/10 bg-black/15 text-white/65 backdrop-blur-sm transition hover:bg-white hover:text-ink"
-            aria-label={`Edit ${object.name}`}
-            title="Edit object"
+            aria-label={t('objects.card.edit', { name: object.name })}
+            title={t('objects.card.editTitle')}
           >
             <Pencil size={13} />
           </button>
@@ -175,7 +171,7 @@ function ObjectCard({
         <div className="mt-5">
           <div className="flex items-end justify-between gap-3">
             <span className="font-mono text-[8.5px] font-medium tracking-[0.12em] text-muted uppercase">
-              Site progress
+              {t('objects.card.siteProgress')}
             </span>
             <span
               className={cn(
@@ -194,37 +190,37 @@ function ObjectCard({
           </div>
           <p className="mt-1.5 text-[10px] text-faint">
             {object.tasks.length > 0
-              ? `${completed} of ${object.tasks.length} tasks accepted`
-              : 'No tasks created yet'}
+              ? t('objects.card.acceptedOf', { completed, total: object.tasks.length })
+              : t('objects.card.noTasks')}
           </p>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10px] font-medium text-muted">
           {object.tasks.length === 0 ? (
             <span className="inline-flex items-center gap-1 text-faint">
-              <ClipboardList size={11} /> Waiting for first task
+              <ClipboardList size={11} /> {t('objects.card.waitingFirst')}
             </span>
           ) : (
             <>
               <span className="inline-flex items-center gap-1.5">
                 <span className="size-1.5 rounded-full bg-blue" />
-                {pluralize(open, 'open task')}
+                {t('objects.card.openTasks', { count: open })}
               </span>
               {review > 0 ? (
                 <span className="inline-flex items-center gap-1.5">
                   <span className="size-1.5 rounded-full bg-amber" />
-                  {review} in review
+                  {t('objects.card.inReview', { count: review })}
                 </span>
               ) : null}
               {overdue > 0 ? (
                 <span className="inline-flex items-center gap-1 font-semibold text-danger">
                   <AlertTriangle size={10} />
-                  {overdue} overdue
+                  {t('objects.card.overdue', { count: overdue })}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5">
                   <span className="size-1.5 rounded-full bg-moss" />
-                  {pluralize(completed, 'done')}
+                  {t('objects.card.done', { count: completed })}
                 </span>
               )}
             </>
@@ -232,7 +228,7 @@ function ObjectCard({
           {revisions > 0 ? (
             <span className="inline-flex items-center gap-1 font-semibold text-danger">
               <span className="size-1.5 rounded-full bg-danger" />
-              {revisions} revision{revisions === 1 ? '' : 's'}
+              {t('objects.card.revisions', { count: revisions })}
             </span>
           ) : null}
         </div>
@@ -241,10 +237,10 @@ function ObjectCard({
           <AvatarStack
             people={team}
             size="sm"
-            empty={<span className="text-[10px] text-faint">No assignees yet</span>}
+            empty={<span className="text-[10px] text-faint">{t('objects.card.noAssignees')}</span>}
           />
           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-ink transition group-hover:text-accent-dark">
-            Open site
+            {t('objects.card.openSite')}
             <ArrowUpRight size={12} className="transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </span>
         </div>
@@ -252,8 +248,6 @@ function ObjectCard({
     </article>
   )
 }
-
-const TODAY_SHORT = formatDate(new Date().toISOString(), { month: 'short', day: 'numeric' })
 
 function CardSkeleton() {
   return (
@@ -275,6 +269,8 @@ function CardSkeleton() {
 
 export function ObjectsPage() {
   const { profile } = useAuth()
+  const { t, path, dueDateInfo, getTodayLabel, greeting, formatShortDate, errorText } =
+    useLanguage()
   const navigate = useNavigate()
 
   const { data: objects, loading, refreshing, error, reload } = useAsyncData(
@@ -300,7 +296,7 @@ export function ObjectsPage() {
     const percent = progressPercent(tasks.length, accepted)
 
     return { tasks, open, review, accepted, overdue, activeSites, percent }
-  }, [list])
+  }, [list, dueDateInfo])
 
   if (!profile) return null
 
@@ -337,7 +333,7 @@ export function ObjectsPage() {
     const wasCreating = editingObject === null
     setEditingObject(null)
     if (wasCreating) {
-      navigate(`/objects/${saved.id}`)
+      navigate(path(`/objects/${saved.id}`))
     } else {
       void reload()
     }
@@ -349,15 +345,15 @@ export function ObjectsPage() {
         <div>
           <p className="flex items-center gap-2 font-mono text-[9px] font-medium tracking-[0.16em] text-muted uppercase">
             <span className="size-1.5 rounded-full bg-accent" />
-            Portfolio · {getTodayLabel()}
+            {t('objects.eyebrow', { date: getTodayLabel() })}
           </p>
           <h1 className="mt-3 font-display text-3xl leading-tight font-semibold tracking-[-0.04em] text-ink text-balance sm:text-4xl">
-            {isManager ? `${greeting()}, ${firstName}.` : 'Your sites'}
+            {isManager
+              ? t('objects.titleManager', { greeting: greeting(), name: firstName })
+              : t('objects.titleWorker')}
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
-            {isManager
-              ? 'Here is how the portfolio and your review queue are moving today.'
-              : 'Every construction site where you have assigned work, in one place.'}
+            {isManager ? t('objects.subtitleManager') : t('objects.subtitleWorker')}
           </p>
         </div>
 
@@ -369,15 +365,15 @@ export function ObjectsPage() {
               onClick={openCreate}
               className="h-11 px-5"
             >
-              New object
+              {t('objects.newObject')}
             </Button>
           ) : (
             <Link
-              to="/my-tasks"
+              to={path('/my-tasks')}
               className="inline-flex h-11 items-center gap-2 rounded-full bg-ink px-5 text-xs font-semibold text-canvas transition hover:bg-ink-soft"
             >
               <ClipboardList size={15} />
-              View my tasks
+              {t('objects.viewMyTasks')}
               <ArrowRight size={14} />
             </Link>
           )}
@@ -397,30 +393,36 @@ export function ObjectsPage() {
       ) : (
         <div className="mt-7 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
           <StatCard
-            label="Sites"
+            label={t('objects.stats.sites')}
             value={list.length}
-            detail={`${stats.activeSites} with open work`}
+            detail={t('objects.stats.sitesDetail', { count: stats.activeSites })}
             icon={<Building2 size={13} />}
             iconClass="bg-accent-soft text-accent-dark"
           />
           <StatCard
-            label="Open tasks"
+            label={t('objects.stats.open')}
             value={stats.open}
-            detail={stats.overdue > 0 ? `${stats.overdue} overdue` : 'Nothing overdue'}
+            detail={
+              stats.overdue > 0
+                ? t('objects.stats.openDetailOverdue', { count: stats.overdue })
+                : t('objects.stats.openDetail')
+            }
             icon={<ClipboardList size={13} />}
             iconClass="bg-blue-soft text-blue"
           />
           <StatCard
-            label="In review"
+            label={t('objects.stats.review')}
             value={stats.review}
-            detail={isManager ? 'Waiting for your decision' : 'Waiting for a manager'}
+            detail={
+              isManager ? t('objects.stats.reviewManager') : t('objects.stats.reviewWorker')
+            }
             icon={<Clock3 size={13} />}
             iconClass="bg-amber-soft text-amber"
           />
           <StatCard
-            label="Accepted"
+            label={t('objects.stats.accepted')}
             value={stats.accepted}
-            detail={`${stats.percent}% of all tasks`}
+            detail={t('objects.stats.acceptedDetail', { percent: stats.percent })}
             icon={<CheckCircle2 size={13} />}
             iconClass="bg-moss-soft text-moss"
           />
@@ -431,9 +433,9 @@ export function ObjectsPage() {
         <div className="scrollbar-thin flex items-center gap-1.5 overflow-x-auto pb-0.5">
           {(
             [
-              { key: 'all', label: 'All objects', count: list.length },
-              { key: 'active', label: 'Active', count: activeCount },
-              { key: 'complete', label: 'Completed', count: completeCount },
+              { key: 'all', label: t('objects.filter.all'), count: list.length },
+              { key: 'active', label: t('objects.filter.active'), count: activeCount },
+              { key: 'complete', label: t('objects.filter.complete'), count: completeCount },
             ] as const
           ).map((item) => (
             <button
@@ -470,8 +472,8 @@ export function ObjectsPage() {
               type="text"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search objects or addresses"
-              aria-label="Search objects"
+              placeholder={t('objects.searchPlaceholder')}
+              aria-label={t('objects.searchAria')}
               className="h-9 w-full rounded-full border border-line-strong bg-surface pr-8 pl-9 text-xs text-ink transition placeholder:text-faint focus:border-accent focus:bg-paper focus:ring-4 focus:ring-accent/10 focus:outline-none"
             />
             {search ? (
@@ -479,7 +481,7 @@ export function ObjectsPage() {
                 type="button"
                 onClick={() => setSearch('')}
                 className="absolute top-1/2 right-2 grid size-5 -translate-y-1/2 place-items-center rounded-full text-faint hover:bg-canvas hover:text-ink"
-                aria-label="Clear search"
+                aria-label={t('objects.clearSearch')}
               >
                 <X size={11} />
               </button>
@@ -487,7 +489,7 @@ export function ObjectsPage() {
           </div>
           {refreshing ? <Spinner size={13} className="text-muted" /> : null}
           <span className="hidden shrink-0 font-mono text-[8.5px] tracking-[0.1em] text-faint uppercase sm:block">
-            {filteredObjects.length} shown
+            {t('common.shown', { count: filteredObjects.length })}
           </span>
         </div>
       </div>
@@ -495,7 +497,7 @@ export function ObjectsPage() {
       {error && !objects ? (
         <ErrorPanel
           className="mt-6"
-          message={error}
+          message={errorText(error, 'errors.loadObjects')}
           onRetry={() => {
             void reload()
           }}
@@ -511,16 +513,14 @@ export function ObjectsPage() {
           {list.length === 0 ? (
             <EmptyState
               icon={<Building2 size={23} />}
-              title={isManager ? 'No objects in the portfolio yet' : 'No sites assigned to you yet'}
+              title={isManager ? t('objects.emptyTitleManager') : t('objects.emptyTitleWorker')}
               description={
-                isManager
-                  ? 'Create your first construction object, then add tasks and assign workers. Workers only see sites where they have work.'
-                  : 'Your manager has not assigned you a task on a site yet. It will appear here as soon as they do.'
+                isManager ? t('objects.emptyBodyManager') : t('objects.emptyBodyWorker')
               }
               action={
                 isManager ? (
                   <Button variant="accent" icon={<Plus size={15} />} onClick={openCreate}>
-                    Create first object
+                    {t('objects.createFirst')}
                   </Button>
                 ) : null
               }
@@ -528,8 +528,8 @@ export function ObjectsPage() {
           ) : (
             <EmptyState
               icon={<Search size={22} />}
-              title="No objects match this view"
-              description="Try a different search term or switch back to all objects."
+              title={t('objects.noMatchTitle')}
+              description={t('objects.noMatchBody')}
               action={
                 <Button
                   variant="secondary"
@@ -538,7 +538,7 @@ export function ObjectsPage() {
                     setFilter('all')
                   }}
                 >
-                  Clear filters
+                  {t('common.clearFilters')}
                 </Button>
               }
             />
@@ -562,12 +562,13 @@ export function ObjectsPage() {
       <div className="mt-8 flex items-center justify-between gap-4 rounded-2xl border border-line/70 bg-surface/50 px-4 py-3">
         <p className="flex items-center gap-2 text-[10px] text-muted">
           <MapPin size={12} className="text-faint" />
-          {isManager
-            ? 'Workers only see sites with assigned tasks.'
-            : 'Your view is scoped to sites with work assigned to you.'}
+          {isManager ? t('objects.workersNoteManager') : t('objects.workersNoteWorker')}
         </p>
         <p className="hidden font-mono text-[8px] tracking-[0.12em] text-faint uppercase sm:block">
-          {stats.tasks.length} total tasks · {TODAY_SHORT}
+          {t('objects.totalTasks', {
+            count: stats.tasks.length,
+            date: formatShortDate(TODAY_ISO),
+          })}
         </p>
       </div>
 

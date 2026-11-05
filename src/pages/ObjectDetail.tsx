@@ -17,17 +17,11 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/auth-context'
 import { useAsyncData } from '../hooks/useAsyncData'
+import { useLanguage } from '../i18n/language-context'
 import { crm } from '../lib/api'
 import { sortTasksByPriority, STATUS_META, TASK_STATUSES } from '../lib/status'
 import type { ObjectWithTasks, Task, TaskStatus, TaskWithRelations } from '../lib/types'
-import {
-  cn,
-  dueDateInfo,
-  formatDate,
-  formatDateTime,
-  pluralize,
-  progressPercent,
-} from '../lib/utils'
+import { cn, progressPercent } from '../lib/utils'
 import { Avatar, AvatarStack } from '../components/Avatar'
 import { Button } from '../components/Button'
 import { EmptyState, ErrorPanel, Skeleton, Spinner } from '../components/Feedback'
@@ -40,6 +34,7 @@ import { TaskModal } from '../components/TaskModal'
 type TaskFilter = 'all' | TaskStatus
 
 function ProgressRing({ percent }: { percent: number }) {
+  const { t } = useLanguage()
   const size = 112
   const stroke = 9
   const radius = (size - stroke) / 2
@@ -77,7 +72,7 @@ function ProgressRing({ percent }: { percent: number }) {
           <span className="text-sm text-canvas/50">%</span>
         </p>
         <p className="mt-1 font-mono text-[7.5px] tracking-[0.14em] text-canvas/40 uppercase">
-          accepted
+          {t('object.progressAccepted')}
         </p>
       </div>
     </div>
@@ -91,6 +86,7 @@ function TaskRow({
   task: TaskWithRelations
   onOpen: (task: TaskWithRelations) => void
 }) {
+  const { t, dueDateInfo } = useLanguage()
   const due = dueDateInfo(task.due_date, task.status === 'accepted')
 
   return (
@@ -114,7 +110,7 @@ function TaskRow({
           />
         </div>
         <p className="mt-1 line-clamp-1 text-[11px] leading-5 text-muted">
-          {task.description || 'No brief added.'}
+          {task.description || t('object.taskNoBrief')}
         </p>
         <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
           <StatusBadge status={task.status} />
@@ -125,7 +121,7 @@ function TaskRow({
                 {task.assignee.full_name}
               </>
             ) : (
-              'Unassigned'
+              t('object.taskUnassigned')
             )}
           </span>
           <span
@@ -190,9 +186,10 @@ function PageSkeleton() {
 export function ObjectDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { profile } = useAuth()
+  const { t, path, dueDateInfo, formatDate, formatDateTime, errorText } = useLanguage()
   const { data: object, loading, refreshing, error, reload, setData } = useAsyncData(
     async () => {
-      if (!id) throw new Error('Object ID is missing.')
+      if (!id) throw new Error('errors.objectMissing')
       return crm.getObject(id)
     },
     [id],
@@ -214,16 +211,16 @@ export function ObjectDetailPage() {
     return (
       <div className="animate-fade-in">
         <Link
-          to="/"
+          to={path('/')}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted transition hover:text-ink"
         >
           <ArrowLeft size={14} />
-          All objects
+          {t('object.back')}
         </Link>
         <ErrorPanel
           className="mt-5"
-          title="This object could not be opened"
-          message={error ?? 'Object not found, or you do not have access to it.'}
+          title={t('object.errorTitle')}
+          message={errorText(error, 'object.errorMessage')}
           onRetry={() => {
             void reload()
           }}
@@ -253,10 +250,10 @@ export function ObjectDetailPage() {
   )
 
   const filters: { key: TaskFilter; label: string; count: number }[] = [
-    { key: 'all', label: 'All tasks', count: tasks.length },
+    { key: 'all', label: t('object.filterAll'), count: tasks.length },
     ...TASK_STATUSES.map((status) => ({
       key: status,
-      label: STATUS_META[status].label,
+      label: t(STATUS_META[status].labelKey),
       count: tasks.filter((task) => task.status === status).length,
     })),
   ]
@@ -300,11 +297,11 @@ export function ObjectDetailPage() {
     <div className="animate-fade-in">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
-          to="/"
+          to={path('/')}
           className="group inline-flex items-center gap-1.5 text-xs font-semibold text-muted transition hover:text-ink"
         >
           <ArrowLeft size={14} className="transition group-hover:-translate-x-0.5" />
-          All objects
+          {t('object.back')}
         </Link>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -318,7 +315,7 @@ export function ObjectDetailPage() {
                 onClick={() => setObjectModalOpen(true)}
                 className="h-9"
               >
-                Edit object
+                {t('object.edit')}
               </Button>
               <Button
                 variant="accent"
@@ -327,7 +324,7 @@ export function ObjectDetailPage() {
                 onClick={openNewTask}
                 className="h-9"
               >
-                New task
+                {t('object.newTask')}
               </Button>
             </>
           ) : null}
@@ -340,16 +337,16 @@ export function ObjectDetailPage() {
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 font-mono text-[8px] font-medium tracking-[0.13em] text-muted uppercase">
                 <ClipboardList size={10} />
-                Object
+                {t('object.badge')}
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 font-mono text-[8px] font-medium tracking-[0.1em] uppercase">
                 <span className={cn('size-1.5 rounded-full', isComplete ? 'bg-moss' : 'bg-amber')} />
                 <span className={isComplete ? 'text-moss' : 'text-amber'}>
-                  {isComplete ? 'Completed' : 'Active site'}
+                  {isComplete ? t('object.completed') : t('object.activeSite')}
                 </span>
               </span>
               <span className="font-mono text-[8px] tracking-[0.1em] text-faint">
-                Opened {formatDate(object.created_at)}
+                {t('object.opened', { date: formatDate(object.created_at) })}
               </span>
             </div>
 
@@ -361,17 +358,17 @@ export function ObjectDetailPage() {
               {object.address}
             </p>
             <p className="mt-4 max-w-2xl text-sm leading-6 whitespace-pre-line text-ink-soft/80">
-              {object.description || 'No description has been added for this object yet.'}
+              {object.description || t('object.noDescription')}
             </p>
 
             <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-line/75 pt-4">
               <span className="inline-flex items-center gap-1.5 text-[10px] text-muted">
                 <ClipboardList size={12} className="text-faint" />
-                {pluralize(tasks.length, 'task')}
+                {t('object.taskCount', { count: tasks.length })}
               </span>
               <span className="inline-flex items-center gap-1.5 text-[10px] text-muted">
                 <Clock3 size={12} className="text-faint" />
-                Updated {formatDateTime(object.updated_at)}
+                {t('object.updated', { date: formatDateTime(object.updated_at) })}
               </span>
               <span className="flex items-center gap-2 text-[10px] text-muted">
                 <Users size={12} className="text-faint" />
@@ -379,7 +376,7 @@ export function ObjectDetailPage() {
                   people={team}
                   max={4}
                   size="xs"
-                  empty={<span className="text-faint">No assignees</span>}
+                  empty={<span className="text-faint">{t('object.noAssignees')}</span>}
                 />
               </span>
             </div>
@@ -389,7 +386,7 @@ export function ObjectDetailPage() {
             <div className="relative">
               <div className="flex items-center justify-between">
                 <p className="font-mono text-[8.5px] font-medium tracking-[0.16em] text-canvas/50 uppercase">
-                  Site pulse
+                  {t('object.sitePulse')}
                 </p>
                 <ShieldCheck size={13} className="text-canvas/25" />
               </div>
@@ -400,7 +397,7 @@ export function ObjectDetailPage() {
                 </div>
                 <div className="min-w-0 flex-1 space-y-2.5">
                   <p className="text-[10px] leading-4 text-canvas/60">
-                    {completed} of {tasks.length} tasks accepted
+                    {t('object.acceptedOf', { completed, total: tasks.length })}
                   </p>
                   <div className="h-1 overflow-hidden rounded-full bg-white/10">
                     <div
@@ -414,13 +411,13 @@ export function ObjectDetailPage() {
                         {underReview}
                       </p>
                       <p className="mt-1 font-mono text-[7.5px] tracking-[0.08em] text-canvas/45 uppercase">
-                        Review
+                        {t('object.review')}
                       </p>
                     </div>
                     <div className="rounded-lg bg-white/[0.055] px-1.5 py-2 text-center">
                       <p className="font-display text-base leading-none font-semibold">{revisions}</p>
                       <p className="mt-1 font-mono text-[7.5px] tracking-[0.08em] text-canvas/45 uppercase">
-                        Revisions
+                        {t('object.revisions')}
                       </p>
                     </div>
                     <div className="rounded-lg bg-white/[0.055] px-1.5 py-2 text-center">
@@ -433,7 +430,7 @@ export function ObjectDetailPage() {
                         {overdue}
                       </p>
                       <p className="mt-1 font-mono text-[7.5px] tracking-[0.08em] text-canvas/45 uppercase">
-                        Overdue
+                        {t('object.overdue')}
                       </p>
                     </div>
                   </div>
@@ -443,12 +440,12 @@ export function ObjectDetailPage() {
               {overdue > 0 ? (
                 <p className="mt-4 flex items-center gap-1.5 border-t border-white/10 pt-3 text-[9px] text-orange-200/75">
                   <AlertTriangle size={10} />
-                  {overdue} task{overdue === 1 ? '' : 's'} past the due date
+                  {t('object.pastDue', { count: overdue })}
                 </p>
               ) : (
                 <p className="mt-4 flex items-center gap-1.5 border-t border-white/10 pt-3 text-[9px] text-canvas/40">
                   <CheckCircle2 size={10} />
-                  No overdue work on this site
+                  {t('object.noOverdue')}
                 </p>
               )}
             </div>
@@ -459,17 +456,17 @@ export function ObjectDetailPage() {
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="font-mono text-[8.5px] font-medium tracking-[0.15em] text-muted uppercase">
-            Work breakdown
+            {t('object.workBreakdown')}
           </p>
           <h2 className="mt-1.5 flex items-center gap-2 font-display text-2xl font-semibold tracking-[-0.035em] text-ink">
-            Tasks
+            {t('object.tasksHeading')}
             <span className="rounded-full bg-canvas-deep px-2 py-0.5 font-mono text-[9px] font-medium text-muted">
               {tasks.length}
             </span>
           </h2>
         </div>
         <p className="text-[10px] text-muted">
-          Sorted by urgency and due date · {filteredTasks.length} shown
+          {t('object.sortedShown', { count: filteredTasks.length })}
         </p>
       </div>
 
@@ -510,7 +507,7 @@ export function ObjectDetailPage() {
       {error && object ? (
         <div className="mt-4">
           <ErrorPanel
-            message={error}
+            message={errorText(error, 'errors.loadObject')}
             onRetry={() => {
               void reload()
             }}
@@ -531,27 +528,25 @@ export function ObjectDetailPage() {
               )
             }
             title={
-              tasks.length === 0
-                ? 'No tasks on this object yet'
-                : `No ${filter === 'all' ? '' : STATUS_META[filter].label.toLowerCase() + ' '}tasks in this view`
+              tasks.length === 0 ? t('object.emptyNoTasks') : t('object.emptyFilter')
             }
             description={
               tasks.length === 0
                 ? isManager
-                  ? 'Create the first task, assign a worker, and the status flow can begin.'
-                  : 'No work has been assigned to you on this site yet.'
-                : 'Switch to another status filter to see the rest of the work.'
+                  ? t('object.emptyNoTasksManager')
+                  : t('object.emptyNoTasksWorker')
+                : t('object.emptyFilterBody')
             }
             action={
               tasks.length === 0 ? (
                 isManager ? (
                   <Button variant="accent" icon={<Plus size={15} />} onClick={openNewTask}>
-                    Create first task
+                    {t('object.createFirstTask')}
                   </Button>
                 ) : null
               ) : (
                 <Button variant="secondary" onClick={() => setFilter('all')}>
-                  Show all tasks
+                  {t('common.showAllTasks')}
                 </Button>
               )
             }
@@ -566,7 +561,7 @@ export function ObjectDetailPage() {
       {tasks.length > 0 ? (
         <p className="mt-4 flex items-center gap-1.5 text-[9px] text-faint">
           <ShieldCheck size={11} />
-          Every status change is recorded automatically in an immutable audit trail.
+          {t('object.immutableNote')}
         </p>
       ) : null}
 

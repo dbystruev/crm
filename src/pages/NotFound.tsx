@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Construction } from 'lucide-react'
+import { useLanguage } from '../i18n/language-context'
 import { Logo } from '../components/Logo'
 
 export function NotFoundPage() {
+  const { t, path } = useLanguage()
+
   return (
     <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-canvas px-4">
       <div className="bg-blueprint-light pointer-events-none absolute inset-0 opacity-50" />
@@ -15,20 +18,18 @@ export function NotFoundPage() {
             <Construction size={24} />
           </div>
           <p className="mt-5 font-mono text-[9px] font-medium tracking-[0.16em] text-accent uppercase">
-            Error 404
+            {t('notFound.code')}
           </p>
           <h1 className="mt-2 font-display text-2xl font-semibold tracking-[-0.03em] text-ink">
-            This page is still under construction
+            {t('notFound.title')}
           </h1>
-          <p className="mt-2 text-sm leading-6 text-muted">
-            The address you followed does not exist in this workspace.
-          </p>
+          <p className="mt-2 text-sm leading-6 text-muted">{t('notFound.body')}</p>
           <Link
-            to="/"
+            to={path('/')}
             className="mt-6 inline-flex h-10 items-center gap-2 rounded-full bg-ink px-4 text-xs font-semibold text-canvas transition hover:bg-ink-soft"
           >
             <ArrowLeft size={14} />
-            Back to objects
+            {t('notFound.back')}
           </Link>
         </div>
       </div>

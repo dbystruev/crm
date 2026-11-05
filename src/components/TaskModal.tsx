@@ -11,6 +11,7 @@ import {
   UserRound,
 } from 'lucide-react'
 import { useAuth } from '../context/auth-context'
+import { useLanguage } from '../i18n/language-context'
 import { crm } from '../lib/api'
 import { latestRevisionComment } from '../lib/status'
 import type {
@@ -20,13 +21,7 @@ import type {
   TaskWithRelations,
   TransitionOption,
 } from '../lib/types'
-import {
-  cn,
-  dueDateInfo,
-  errorMessage,
-  formatDate,
-  formatDateTime,
-} from '../lib/utils'
+import { cn } from '../lib/utils'
 import { ActionButtons } from './ActionButtons'
 import { Avatar } from './Avatar'
 import { Button } from './Button'
@@ -71,6 +66,7 @@ export function TaskModal({
   onEdit,
 }: TaskModalProps) {
   const { profile } = useAuth()
+  const { t, errorText, dueDateInfo, formatDate, formatDateTime } = useLanguage()
   const { toast } = useToast()
 
   const [currentTask, setCurrentTask] = useState<TaskWithRelations | null>(task)
@@ -102,7 +98,7 @@ export function TaskModal({
         if (active) setHistory(entries)
       })
       .catch((caught: unknown) => {
-        if (active) setHistoryError(errorMessage(caught, 'Could not load the history.'))
+        if (active) setHistoryError(errorText(caught, 'task.historyLoadError'))
       })
       .finally(() => {
         if (active) setHistoryLoading(false)
@@ -131,6 +127,11 @@ export function TaskModal({
   const statusVisual = statusIconStyles[currentTask.status]
   const StatusIcon = statusVisual.Icon
   const canEdit = profile?.role === 'manager' && Boolean(onEdit)
+  const roleLabel = profile
+    ? profile.role === 'manager'
+      ? t('roles.manager')
+      : t('roles.worker')
+    : t('common.viewer')
 
   const handleTransitionSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -138,7 +139,7 @@ export function TaskModal({
 
     const cleanComment = comment.trim()
     if (selectedTransition.requiresComment && !cleanComment) {
-      setTransitionError('A comment is required when requesting a revision.')
+      setTransitionError(t('task.revisionCommentRequired'))
       return
     }
 
@@ -157,6 +158,15 @@ export function TaskModal({
       setComment('')
       onTaskUpdated(updated)
 
+      const toastTitle =
+        selectedTransition.to === 'accepted'
+          ? t('task.toast.acceptedTitle')
+          : selectedTransition.to === 'revision_requested'
+            ? t('task.toast.revisionTitle')
+            : selectedTransition.to === 'under_review'
+              ? t('task.toast.reviewTitle')
+              : t('task.toast.progressTitle')
+
       toast({
         tone:
           selectedTransition.to === 'revision_requested'
@@ -164,18 +174,11 @@ export function TaskModal({
             : selectedTransition.to === 'accepted'
               ? 'success'
               : 'info',
-        title:
-          selectedTransition.to === 'accepted'
-            ? 'Task accepted'
-            : selectedTransition.to === 'revision_requested'
-              ? 'Revision requested'
-              : selectedTransition.to === 'under_review'
-                ? 'Sent for review'
-                : 'Task moved to In progress',
+        title: toastTitle,
         description:
           selectedTransition.to === 'revision_requested'
-            ? 'Your note was added to the task history for the worker.'
-            : 'The status change was recorded in the immutable history.',
+            ? t('task.toast.revisionBody')
+            : t('task.toast.defaultBody'),
       })
 
       try {
@@ -183,10 +186,10 @@ export function TaskModal({
         setHistory(entries)
         setHistoryError(null)
       } catch (caught) {
-        setHistoryError(errorMessage(caught, 'Could not refresh the history.'))
+        setHistoryError(errorText(caught, 'task.historyRefreshError'))
       }
     } catch (caught) {
-      setTransitionError(errorMessage(caught, 'Could not update the task status.'))
+      setTransitionError(errorText(caught, 'task.transitionError'))
     } finally {
       setTransitioning(false)
     }
@@ -206,7 +209,7 @@ export function TaskModal({
         ? MessageSquareWarning
         : selectedTransition.to === 'under_review'
           ? Clock3
-          : selectedTransition.label === 'Resume work'
+          : selectedTransition.labelKey === 'action.resume'
             ? History
             : Play
     : Play
@@ -220,7 +223,7 @@ export function TaskModal({
         }}
         size="lg"
         closeOnEscape={!selectedTransition}
-        eyebrow={taskObject ? `Task · ${taskObject.name}` : 'Task details'}
+        eyebrow={taskObject ? t('task.eyebrow', { name: taskObject.name }) : t('task.details')}
         title={currentTask.title}
         description={
           <div className="flex flex-wrap items-center gap-2">
@@ -239,7 +242,7 @@ export function TaskModal({
               {due.label}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 font-mono text-[9px] text-muted">
-              {history.length} {history.length === 1 ? 'entry' : 'entries'}
+              {t('task.entries', { count: history.length })}
             </span>
           </div>
         }
@@ -259,7 +262,7 @@ export function TaskModal({
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                   <p className="text-xs font-bold tracking-wide text-danger uppercase">
-                    Revision requested
+                    {t('task.revisionRequested')}
                   </p>
                   <span className="font-mono text-[9px] text-muted">
                     {formatDateTime(revisionEntry.created_at)}
@@ -267,7 +270,8 @@ export function TaskModal({
                 </div>
                 <p className="mt-1.5 text-sm leading-6 text-ink-soft">{revisionEntry.comment}</p>
                 <p className="mt-1.5 text-[10px] text-muted">
-                  {revisionEntry.actor?.full_name ?? 'A manager'} · Review note
+                  {revisionEntry.actor?.full_name ?? t('task.managerFallback')} ·{' '}
+                  {t('task.reviewNote')}
                 </p>
               </div>
             </div>
@@ -275,7 +279,7 @@ export function TaskModal({
         ) : null}
 
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-          <MetaCard label="Assignee" icon={<UserRound size={12} />}>
+          <MetaCard label={t('task.assignee')} icon={<UserRound size={12} />}>
             <div className="flex min-w-0 items-center gap-1.5">
               {currentTask.assignee ? (
                 <>
@@ -289,12 +293,12 @@ export function TaskModal({
                   </span>
                 </>
               ) : (
-                <span className="text-xs text-muted">Unassigned</span>
+                <span className="text-xs text-muted">{t('object.taskUnassigned')}</span>
               )}
             </div>
           </MetaCard>
 
-          <MetaCard label="Due date" icon={<CalendarDays size={12} />}>
+          <MetaCard label={t('task.dueDate')} icon={<CalendarDays size={12} />}>
             <p
               className={cn(
                 'text-xs font-semibold',
@@ -309,11 +313,11 @@ export function TaskModal({
             </p>
           </MetaCard>
 
-          <MetaCard label="Created" icon={<CircleDot size={12} />}>
+          <MetaCard label={t('task.created')} icon={<CircleDot size={12} />}>
             <p className="text-xs font-semibold text-ink">{formatDate(currentTask.created_at)}</p>
           </MetaCard>
 
-          <MetaCard label="Last update" icon={<Clock3 size={12} />}>
+          <MetaCard label={t('task.lastUpdate')} icon={<Clock3 size={12} />}>
             <p className="text-xs font-semibold text-ink">
               {formatDateTime(currentTask.updated_at)}
             </p>
@@ -323,7 +327,7 @@ export function TaskModal({
         <section>
           <div className="mb-2 flex items-center justify-between gap-3">
             <h3 className="font-display text-sm font-semibold tracking-[-0.01em] text-ink">
-              Task brief
+              {t('task.brief')}
             </h3>
             {canEdit ? (
               <Button
@@ -333,13 +337,13 @@ export function TaskModal({
                 onClick={() => onEdit?.(currentTask)}
                 className="-mr-1.5 h-7 px-2 text-[11px]"
               >
-                Edit details
+                {t('task.editDetails')}
               </Button>
             ) : null}
           </div>
           <div className="rounded-2xl border border-line/80 bg-surface px-4 py-3.5">
             <p className="text-sm leading-6 whitespace-pre-line text-ink-soft">
-              {currentTask.description || 'No brief was added to this task.'}
+              {currentTask.description || t('task.noBrief')}
             </p>
           </div>
         </section>
@@ -348,14 +352,12 @@ export function TaskModal({
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div>
               <h3 className="font-display text-sm font-semibold tracking-[-0.01em] text-ink">
-                Next step
+                {t('task.nextStep')}
               </h3>
-              <p className="mt-0.5 text-[11px] text-muted">
-                Available actions for your role and this status.
-              </p>
+              <p className="mt-0.5 text-[11px] text-muted">{t('task.actionsHint')}</p>
             </div>
             <span className="font-mono text-[8.5px] tracking-[0.12em] text-faint uppercase">
-              {profile?.role ?? 'viewer'}
+              {roleLabel}
             </span>
           </div>
           <ActionButtons
@@ -374,10 +376,10 @@ export function TaskModal({
           <div className="mb-3 flex items-center justify-between gap-3">
             <h3 className="flex items-center gap-1.5 font-display text-sm font-semibold tracking-[-0.01em] text-ink">
               <History size={14} className="text-muted" />
-              Status history
+              {t('task.statusHistory')}
             </h3>
             <span className="font-mono text-[8.5px] tracking-[0.12em] text-faint uppercase">
-              Newest first
+              {t('task.newestFirst')}
             </span>
           </div>
           <HistoryTimeline entries={history} loading={historyLoading} error={historyError} />
@@ -389,9 +391,9 @@ export function TaskModal({
         onClose={closeTransition}
         layer="top"
         size="sm"
-        eyebrow="Status change"
-        title={selectedTransition?.confirmationTitle}
-        description={selectedTransition?.confirmationBody}
+        eyebrow={t('task.statusChange')}
+        title={selectedTransition ? t(selectedTransition.titleKey) : undefined}
+        description={selectedTransition ? t(selectedTransition.bodyKey) : undefined}
         icon={
           <span
             className={cn(
@@ -405,7 +407,7 @@ export function TaskModal({
         footer={
           <>
             <Button variant="ghost" onClick={closeTransition} disabled={transitioning}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="submit"
@@ -421,7 +423,7 @@ export function TaskModal({
               }
               loading={transitioning}
             >
-              {selectedTransition?.confirmLabel ?? 'Confirm'}
+              {selectedTransition ? t(selectedTransition.confirmKey) : t('common.confirm')}
             </Button>
           </>
         }
@@ -429,13 +431,17 @@ export function TaskModal({
         <form id="transition-form" onSubmit={handleTransitionSubmit} className="space-y-3">
           {transitionError ? <InlineError>{transitionError}</InlineError> : null}
           <FormField
-            label={selectedTransition?.requiresComment ? 'Revision comment' : 'Note'}
+            label={
+              selectedTransition?.requiresComment
+                ? t('task.revisionComment')
+                : t('common.note')
+            }
             htmlFor="transition-comment"
             required={selectedTransition?.requiresComment}
             hint={
               selectedTransition?.requiresComment
-                ? 'Tell the worker exactly what needs to change. This comment becomes part of the permanent history.'
-                : 'Optional. Add context for the team; it will be stored in the task history.'
+                ? t('task.revisionHint')
+                : t('task.noteHint')
             }
             labelExtra={
               <span className="font-mono text-[9px] text-faint">{comment.length}/1200</span>
@@ -454,8 +460,8 @@ export function TaskModal({
               maxLength={1200}
               placeholder={
                 selectedTransition?.requiresComment
-                  ? 'What needs to be fixed before this can be accepted?'
-                  : 'Add a short note (optional)…'
+                  ? t('task.revisionPlaceholder')
+                  : t('task.notePlaceholder')
               }
             />
           </FormField>

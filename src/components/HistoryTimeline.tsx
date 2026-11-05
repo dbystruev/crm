@@ -1,7 +1,8 @@
 import { LockKeyhole, MessageSquareQuote, ShieldCheck, HardHat } from 'lucide-react'
+import { useLanguage } from '../i18n/language-context'
 import { STATUS_META } from '../lib/status'
 import type { TaskHistoryEntry, TaskStatus } from '../lib/types'
-import { cn, formatDateTime } from '../lib/utils'
+import { cn } from '../lib/utils'
 import { StatusBadge } from './StatusBadge'
 import { statusDotClass } from '../lib/status-styles'
 import { Skeleton } from './Feedback'
@@ -17,9 +18,11 @@ function dotClass(status: TaskStatus) {
 }
 
 export function HistoryTimeline({ entries, loading = false, error = null }: HistoryTimelineProps) {
+  const { t, formatDateTime } = useLanguage()
+
   if (loading) {
     return (
-      <div className="space-y-4" aria-label="Loading history">
+      <div className="space-y-4" aria-label={t('history.loading')}>
         {[0, 1, 2].map((index) => (
           <div key={index} className="flex gap-3">
             <Skeleton className="mt-1 size-3 shrink-0 rounded-full" />
@@ -45,7 +48,7 @@ export function HistoryTimeline({ entries, loading = false, error = null }: Hist
   if (entries.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-line-strong px-4 py-6 text-center text-xs text-muted">
-        No history has been recorded for this task yet.
+        {t('history.empty')}
       </p>
     )
   }
@@ -54,12 +57,14 @@ export function HistoryTimeline({ entries, loading = false, error = null }: Hist
 
   return (
     <div>
-      <ol aria-label="Task status history">
+      <ol aria-label={t('history.aria')}>
         {sorted.map((entry, index) => {
           const isLatest = index === 0
           const isRevision = entry.to_status === 'revision_requested'
           const isCreation = entry.from_status === null
           const ActorIcon = entry.actor?.role === 'manager' ? ShieldCheck : HardHat
+          const actorRole =
+            entry.actor?.role === 'manager' ? t('roles.manager') : t('roles.worker')
 
           return (
             <li key={entry.id} className="flex gap-3.5">
@@ -79,17 +84,17 @@ export function HistoryTimeline({ entries, loading = false, error = null }: Hist
               <div className={cn('min-w-0 flex-1', index < sorted.length - 1 ? 'pb-5' : 'pb-1')}>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <p className="text-xs font-semibold text-ink">
-                    {entry.actor?.full_name ?? 'System'}
+                    {entry.actor?.full_name ?? t('common.system')}
                   </p>
                   {entry.actor ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-canvas-deep/70 px-1.5 py-0.5 font-mono text-[8px] font-medium tracking-wide text-muted uppercase">
                       <ActorIcon size={9} />
-                      {entry.actor.role}
+                      {actorRole}
                     </span>
                   ) : null}
                   {isLatest ? (
                     <span className="rounded-full bg-ink px-1.5 py-0.5 font-mono text-[8px] font-medium tracking-wide text-canvas uppercase">
-                      Latest
+                      {t('common.latest')}
                     </span>
                   ) : null}
                   <time
@@ -103,14 +108,16 @@ export function HistoryTimeline({ entries, loading = false, error = null }: Hist
                 <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
                   {isCreation ? (
                     <>
-                      <span>Created the task</span>
+                      <span>{t('history.created')}</span>
                       <StatusBadge status={entry.to_status} size="sm" withDot={false} />
                     </>
                   ) : (
                     <>
-                      <span>Moved from</span>
+                      <span>{t('history.movedFrom')}</span>
                       <span className="font-medium text-ink-soft">
-                        {entry.from_status ? STATUS_META[entry.from_status].label : '—'}
+                        {entry.from_status
+                          ? t(STATUS_META[entry.from_status].labelKey)
+                          : '—'}
                       </span>
                       <span className="text-faint">→</span>
                       <StatusBadge status={entry.to_status} size="sm" withDot={false} />
@@ -133,7 +140,7 @@ export function HistoryTimeline({ entries, loading = false, error = null }: Hist
                         className={isRevision ? 'text-danger' : 'text-muted'}
                       />
                       <span className={isRevision ? 'text-danger' : 'text-muted'}>
-                        {isRevision ? 'Revision note' : 'Note'}
+                        {isRevision ? t('history.revisionNote') : t('history.note')}
                       </span>
                     </p>
                     <p className="text-xs leading-5 text-ink-soft">{entry.comment}</p>
@@ -147,10 +154,7 @@ export function HistoryTimeline({ entries, loading = false, error = null }: Hist
 
       <div className="mt-4 flex items-start gap-2 rounded-lg bg-canvas/60 px-3 py-2.5">
         <LockKeyhole size={12} className="mt-0.5 shrink-0 text-faint" />
-        <p className="text-[10px] leading-4 text-muted">
-          History is immutable. Entries are written automatically by the database and cannot be
-          edited or deleted.
-        </p>
+        <p className="text-[10px] leading-4 text-muted">{t('history.immutable')}</p>
       </div>
     </div>
   )

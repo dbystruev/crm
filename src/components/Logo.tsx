@@ -1,4 +1,5 @@
 import { HardHat } from 'lucide-react'
+import { useLanguage } from '../i18n/language-context'
 import { cn } from '../lib/utils'
 
 interface LogoProps {
@@ -8,6 +9,8 @@ interface LogoProps {
 }
 
 export function Logo({ tone = 'light', compact = false, className }: LogoProps) {
+  const { t } = useLanguage()
+
   return (
     <div className={cn('flex items-center gap-3', className)}>
       <div
@@ -26,7 +29,9 @@ export function Logo({ tone = 'light', compact = false, className }: LogoProps) 
               tone === 'light' ? 'text-ink' : 'text-canvas',
             )}
           >
-            Objects <span className="text-accent">&amp;</span> Tasks
+            {t('brand.nameFirst')}{' '}
+            <span className="text-accent">{t('brand.nameConnector')}</span>{' '}
+            {t('brand.nameLast')}
           </p>
           <p
             className={cn(
@@ -34,7 +39,7 @@ export function Logo({ tone = 'light', compact = false, className }: LogoProps) 
               tone === 'light' ? 'text-muted' : 'text-canvas/45',
             )}
           >
-            Construction CRM
+            {t('brand.subtitle')}
           </p>
         </div>
       ) : null}

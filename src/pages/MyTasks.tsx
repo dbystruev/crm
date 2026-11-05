@@ -14,17 +14,11 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/auth-context'
 import { useAsyncData } from '../hooks/useAsyncData'
+import { useLanguage } from '../i18n/language-context'
 import { crm } from '../lib/api'
 import { sortTasksByPriority, STATUS_META, TASK_STATUSES } from '../lib/status'
 import type { Task, TaskStatus, TaskWithRelations } from '../lib/types'
-import {
-  cn,
-  dueDateInfo,
-  getTodayLabel,
-  greeting,
-  pluralize,
-  progressPercent,
-} from '../lib/utils'
+import { cn, progressPercent } from '../lib/utils'
 import { Avatar } from '../components/Avatar'
 import { Button } from '../components/Button'
 import { EmptyState, ErrorPanel, Skeleton } from '../components/Feedback'
@@ -77,6 +71,7 @@ function TaskQueueRow({
   task: TaskWithRelations
   onOpen: () => void
 }) {
+  const { t, dueDateInfo } = useLanguage()
   const due = dueDateInfo(task.due_date, task.status === 'accepted')
 
   return (
@@ -94,7 +89,9 @@ function TaskQueueRow({
           <div className="min-w-0">
             <p className="mb-1 flex items-center gap-1.5 font-mono text-[8px] font-medium tracking-[0.1em] text-faint uppercase">
               <MapPin size={9} />
-              <span className="truncate">{task.object?.name ?? 'Construction object'}</span>
+              <span className="truncate">
+                {task.object?.name ?? t('myTasks.objectFallback')}
+              </span>
             </p>
             <h3 className="font-display text-sm leading-snug font-semibold tracking-[-0.01em] text-ink transition group-hover:text-accent-dark">
               {task.title}
@@ -123,7 +120,7 @@ function TaskQueueRow({
           {task.status === 'revision_requested' ? (
             <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-danger">
               <RotateCcw size={10} />
-              Manager note available
+              {t('myTasks.managerNoteAvailable')}
             </span>
           ) : null}
         </div>
@@ -134,6 +131,7 @@ function TaskQueueRow({
 
 export function MyTasksPage() {
   const { profile } = useAuth()
+  const { t, path, dueDateInfo, getTodayLabel, greeting, errorText } = useLanguage()
   const { data: tasks, loading, error, reload, setData } = useAsyncData(
     () => crm.listMyTasks(),
     [],
@@ -142,7 +140,7 @@ export function MyTasksPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
 
   if (!profile) return null
-  if (profile.role !== 'worker') return <Navigate to="/" replace />
+  if (profile.role !== 'worker') return <Navigate to={path('/')} replace />
 
   const allTasks = tasks ?? []
   const selectedTask = selectedTaskId
@@ -165,10 +163,10 @@ export function MyTasksPage() {
   const focusTask = actionable[0] ?? sortTasksByPriority(underReview)[0] ?? null
 
   const filters: { key: TaskFilter; label: string; count: number }[] = [
-    { key: 'all', label: 'All tasks', count: allTasks.length },
+    { key: 'all', label: t('object.filterAll'), count: allTasks.length },
     ...TASK_STATUSES.map((status) => ({
       key: status,
-      label: STATUS_META[status].label,
+      label: t(STATUS_META[status].labelKey),
       count: allTasks.filter((task) => task.status === status).length,
     })),
   ]
@@ -186,6 +184,7 @@ export function MyTasksPage() {
   }
 
   const focusDue = focusTask ? dueDateInfo(focusTask.due_date) : null
+  const readyToWork = openTasks.length - revisions.length - underReview.length
 
   return (
     <div className="animate-fade-in">
@@ -193,14 +192,16 @@ export function MyTasksPage() {
         <div>
           <p className="flex items-center gap-2 font-mono text-[9px] font-medium tracking-[0.16em] text-muted uppercase">
             <span className="size-1.5 rounded-full bg-accent" />
-            Field queue · {getTodayLabel()}
+            {t('myTasks.eyebrow', { date: getTodayLabel() })}
           </p>
           <h1 className="mt-3 font-display text-3xl leading-tight font-semibold tracking-[-0.04em] text-ink sm:text-4xl">
-            My tasks
+            {t('myTasks.title')}
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
-            {greeting()}, {profile.full_name.split(/\s+/)[0]}. Your assigned work, sorted by what
-            needs attention first.
+            {t('myTasks.subtitle', {
+              greeting: greeting(),
+              name: profile.full_name.split(/\s+/)[0],
+            })}
           </p>
         </div>
 
@@ -210,11 +211,11 @@ export function MyTasksPage() {
             <p className="text-xs font-semibold text-ink">{profile.full_name}</p>
             <p className="mt-0.5 flex items-center gap-1 font-mono text-[8px] tracking-[0.1em] text-muted uppercase">
               <HardHat size={9} />
-              Worker · {allTasks.length} assigned
+              {t('myTasks.workerAssigned', { count: allTasks.length })}
             </p>
           </div>
           <span className="ml-2 rounded-full bg-moss-soft px-2 py-1 font-mono text-[8px] font-semibold text-moss">
-            {percent}% done
+            {t('myTasks.percentDone', { percent })}
           </span>
         </div>
       </div>
@@ -232,31 +233,43 @@ export function MyTasksPage() {
       ) : (
         <div className="mt-7 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
           <StatCard
-            label="Open tasks"
+            label={t('myTasks.stats.open')}
             value={openTasks.length}
-            detail={openTasks.length > 0 ? `${openTasks.length - revisions.length - underReview.length} ready to work` : 'All caught up'}
+            detail={
+              openTasks.length > 0
+                ? t('myTasks.stats.openDetail', { count: readyToWork })
+                : t('myTasks.stats.openDetailDone')
+            }
             icon={<ClipboardList size={13} />}
             iconClass="bg-blue-soft text-blue"
           />
           <StatCard
-            label="Revisions"
+            label={t('myTasks.stats.revisions')}
             value={revisions.length}
-            detail={revisions.length > 0 ? 'Needs your attention' : 'No rework requested'}
+            detail={
+              revisions.length > 0
+                ? t('myTasks.stats.revisionsDetail')
+                : t('myTasks.stats.revisionsNone')
+            }
             icon={<RotateCcw size={13} />}
             iconClass="bg-danger-soft text-danger"
             danger={revisions.length > 0}
           />
           <StatCard
-            label="In review"
+            label={t('myTasks.stats.review')}
             value={underReview.length}
-            detail="Waiting for your manager"
+            detail={t('myTasks.stats.reviewDetail')}
             icon={<Clock3 size={13} />}
             iconClass="bg-amber-soft text-amber"
           />
           <StatCard
-            label="Accepted"
+            label={t('myTasks.stats.accepted')}
             value={accepted}
-            detail={accepted > 0 ? `${accepted} of ${allTasks.length} complete` : 'No sign-offs yet'}
+            detail={
+              accepted > 0
+                ? t('myTasks.stats.acceptedDetail', { accepted, total: allTasks.length })
+                : t('myTasks.stats.acceptedNone')
+            }
             icon={<CheckCircle2 size={13} />}
             iconClass="bg-moss-soft text-moss"
           />
@@ -272,12 +285,12 @@ export function MyTasksPage() {
               <p className="flex items-center gap-2 font-mono text-[8.5px] font-medium tracking-[0.16em] text-accent uppercase">
                 <span className="size-1.5 rounded-full bg-accent" />
                 {focusTask.status === 'revision_requested'
-                  ? 'Revision needs your attention'
+                  ? t('myTasks.focus.revision')
                   : focusTask.status === 'in_progress'
-                    ? 'Continue this task'
+                    ? t('myTasks.focus.continue')
                     : focusTask.status === 'new'
-                      ? 'Ready to start'
-                      : 'Waiting for manager review'}
+                      ? t('myTasks.focus.ready')
+                      : t('myTasks.focus.review')}
               </p>
               <h2 className="mt-2 max-w-2xl font-display text-xl leading-snug font-semibold tracking-[-0.025em] text-canvas sm:text-2xl">
                 {focusTask.title}
@@ -285,7 +298,7 @@ export function MyTasksPage() {
               <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] text-canvas/50">
                 <span className="inline-flex items-center gap-1.5">
                   <MapPin size={10} />
-                  {focusTask.object?.name ?? 'Construction object'}
+                  {focusTask.object?.name ?? t('myTasks.objectFallback')}
                 </span>
                 <span
                   className={cn(
@@ -305,7 +318,7 @@ export function MyTasksPage() {
               onClick={() => setSelectedTaskId(focusTask.id)}
               className="w-full shrink-0 border-white/15 bg-canvas text-ink hover:bg-white sm:w-auto"
             >
-              View task
+              {t('myTasks.focus.viewTask')}
             </Button>
           </div>
         </section>
@@ -314,7 +327,7 @@ export function MyTasksPage() {
       {error && !tasks ? (
         <ErrorPanel
           className="mt-5"
-          message={error}
+          message={errorText(error, 'myTasks.errorLoad')}
           onRetry={() => {
             void reload()
           }}
@@ -324,10 +337,10 @@ export function MyTasksPage() {
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="font-mono text-[8.5px] font-medium tracking-[0.15em] text-muted uppercase">
-            Assigned work
+            {t('myTasks.assignedWork')}
           </p>
           <h2 className="mt-1.5 flex items-center gap-2 font-display text-2xl font-semibold tracking-[-0.035em] text-ink">
-            Task queue
+            {t('myTasks.queue')}
             <span className="rounded-full bg-canvas-deep px-2 py-0.5 font-mono text-[9px] font-medium text-muted">
               {allTasks.length}
             </span>
@@ -335,8 +348,8 @@ export function MyTasksPage() {
         </div>
         <p className="text-[10px] text-muted">
           {overdue.length > 0
-            ? `${pluralize(overdue.length, 'task')} past due`
-            : 'Nothing past due — nice work.'}
+            ? t('myTasks.pastDue', { count: overdue.length })
+            : t('myTasks.nothingPastDue')}
         </p>
       </div>
 
@@ -381,19 +394,17 @@ export function MyTasksPage() {
           <EmptyState
             icon={allTasks.length === 0 ? <ClipboardCheck size={23} /> : <ClipboardList size={22} />}
             title={
-              allTasks.length === 0
-                ? 'No tasks assigned to you yet'
-                : `No ${filter === 'all' ? '' : STATUS_META[filter].label.toLowerCase() + ' '}tasks`
+              allTasks.length === 0 ? t('myTasks.emptyNoTasks') : t('myTasks.emptyFilter')
             }
             description={
               allTasks.length === 0
-                ? 'When a manager assigns work on a construction site, it will show up here with a clear due date and next step.'
-                : 'Try another status filter to see the rest of your assigned work.'
+                ? t('myTasks.emptyNoTasksBody')
+                : t('myTasks.emptyFilterBody')
             }
             action={
               allTasks.length > 0 ? (
                 <Button variant="secondary" onClick={() => setFilter('all')}>
-                  Show all tasks
+                  {t('common.showAllTasks')}
                 </Button>
               ) : null
             }
@@ -412,10 +423,7 @@ export function MyTasksPage() {
       {allTasks.length > 0 ? (
         <div className="mt-5 flex items-center gap-2 rounded-xl border border-line/70 bg-surface/60 px-3.5 py-3">
           <ClipboardCheck size={13} className="shrink-0 text-moss" />
-          <p className="text-[10px] leading-4 text-muted">
-            Submit work for review when it is ready. Your manager will accept it or send a revision
-            note, both recorded in the task history.
-          </p>
+          <p className="text-[10px] leading-4 text-muted">{t('myTasks.footerTip')}</p>
         </div>
       ) : null}
 

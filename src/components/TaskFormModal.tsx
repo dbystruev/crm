@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { ChevronDown, ClipboardList, Info, UserRound } from 'lucide-react'
+import { useLanguage } from '../i18n/language-context'
 import { crm } from '../lib/api'
 import type { Profile, Task } from '../lib/types'
-import { errorMessage, toDateInputValue } from '../lib/utils'
+import { toDateInputValue } from '../lib/utils'
 import { Button } from './Button'
 import { InlineError } from './Feedback'
 import { FormField } from './FormField'
@@ -34,6 +35,7 @@ function TaskFormModalContent({
   task,
   onSaved,
 }: Omit<TaskFormModalProps, 'open'>) {
+  const { t, errorText } = useLanguage()
   const { toast } = useToast()
   const [title, setTitle] = useState(task?.title ?? '')
   const [description, setDescription] = useState(task?.description ?? '')
@@ -60,7 +62,7 @@ function TaskFormModalContent({
       })
       .catch((caught: unknown) => {
         if (!active) return
-        setWorkerError(errorMessage(caught, 'Could not load workers.'))
+        setWorkerError(errorText(caught, 'taskForm.loadWorkersError'))
       })
       .finally(() => {
         if (active) setLoadingWorkers(false)
@@ -69,18 +71,18 @@ function TaskFormModalContent({
     return () => {
       active = false
     }
-  }, [])
+  }, [errorText])
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
     setError(null)
 
     if (!title.trim()) {
-      setError('Add a task title.')
+      setError(t('taskForm.errorTitle'))
       return
     }
     if (!assigneeId) {
-      setError('Choose a worker to assign this task to.')
+      setError(t('taskForm.errorAssignee'))
       return
     }
 
@@ -95,8 +97,8 @@ function TaskFormModalContent({
         })
         toast({
           tone: 'success',
-          title: 'Task updated',
-          description: `${saved.title} is up to date.`,
+          title: t('taskForm.toastUpdated'),
+          description: t('taskForm.toastUpdatedBody', { title: saved.title }),
         })
       } else {
         const saved = await crm.createTask({
@@ -108,14 +110,14 @@ function TaskFormModalContent({
         })
         toast({
           tone: 'success',
-          title: 'Task created',
-          description: `${saved.title} was assigned and is ready to start.`,
+          title: t('taskForm.toastCreated'),
+          description: t('taskForm.toastCreatedBody', { title: saved.title }),
         })
       }
       onSaved()
       onClose()
     } catch (caught) {
-      setError(errorMessage(caught, 'Could not save the task.'))
+      setError(errorText(caught, 'taskForm.saveError'))
     } finally {
       setSaving(false)
     }
@@ -130,12 +132,10 @@ function TaskFormModalContent({
         if (!saving) onClose()
       }}
       size="md"
-      eyebrow={`Object · ${object.name}`}
-      title={isEditing ? 'Edit task' : 'Create a task'}
+      eyebrow={t('taskForm.eyebrow', { name: object.name })}
+      title={isEditing ? t('taskForm.editTitle') : t('taskForm.createTitle')}
       description={
-        isEditing
-          ? 'Update the brief, owner, or due date. Status history stays untouched.'
-          : 'Give the crew a clear brief and one accountable owner.'
+        isEditing ? t('taskForm.editDescription') : t('taskForm.createDescription')
       }
       icon={
         <span className="grid size-11 place-items-center rounded-2xl bg-accent-soft text-accent-dark">
@@ -145,7 +145,7 @@ function TaskFormModalContent({
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={saving}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             type="submit"
@@ -154,7 +154,7 @@ function TaskFormModalContent({
             disabled={noWorkers}
             variant="accent"
           >
-            {isEditing ? 'Save changes' : 'Create task'}
+            {isEditing ? t('common.saveChanges') : t('taskForm.createAction')}
           </Button>
         </>
       }
@@ -166,20 +166,21 @@ function TaskFormModalContent({
           <div className="flex items-start gap-2.5 rounded-xl border border-amber/20 bg-amber-soft/60 px-3.5 py-3">
             <Info size={14} className="mt-0.5 shrink-0 text-amber" />
             <p className="text-[11px] leading-5 text-muted">
-              There are no worker profiles yet. Create a worker account in Supabase first, then set
-              its role to <span className="font-semibold text-ink">worker</span>.
+              {t('taskForm.noWorkersBefore')}
+              <span className="font-semibold text-ink">{t('taskForm.noWorkersRole')}</span>
+              {t('taskForm.noWorkersAfter')}
             </p>
           </div>
         ) : null}
 
-        <FormField label="Task title" htmlFor="task-title" required>
+        <FormField label={t('taskForm.title')} htmlFor="task-title" required>
           <input
             id="task-title"
             data-autofocus
             className={inputClass}
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="e.g. Install second-floor drywall"
+            placeholder={t('taskForm.titlePlaceholder')}
             maxLength={180}
             autoComplete="off"
             required
@@ -187,7 +188,7 @@ function TaskFormModalContent({
         </FormField>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <FormField label="Assignee" htmlFor="task-assignee" required>
+          <FormField label={t('taskForm.assignee')} htmlFor="task-assignee" required>
             <div className="relative">
               <UserRound
                 size={15}
@@ -202,7 +203,7 @@ function TaskFormModalContent({
                 required
               >
                 <option value="" disabled>
-                  {loadingWorkers ? 'Loading workers…' : 'Choose a worker'}
+                  {loadingWorkers ? t('taskForm.loadingWorkers') : t('taskForm.chooseWorker')}
                 </option>
                 {workers.map((worker) => (
                   <option key={worker.id} value={worker.id}>
@@ -217,7 +218,11 @@ function TaskFormModalContent({
             </div>
           </FormField>
 
-          <FormField label="Due date" htmlFor="task-due-date" hint="Optional. Shown as overdue after this day.">
+          <FormField
+            label={t('taskForm.dueDate')}
+            htmlFor="task-due-date"
+            hint={t('taskForm.dueDateHint')}
+          >
             <input
               id="task-due-date"
               type="date"
@@ -229,16 +234,16 @@ function TaskFormModalContent({
         </div>
 
         <FormField
-          label="Task brief"
+          label={t('taskForm.brief')}
           htmlFor="task-description"
-          hint="Include scope, drawings, materials, or anything the crew should know."
+          hint={t('taskForm.briefHint')}
         >
           <textarea
             id="task-description"
             className={textareaClass}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            placeholder="Describe the work and the expected finish…"
+            placeholder={t('taskForm.briefPlaceholder')}
             rows={4}
             maxLength={4000}
           />

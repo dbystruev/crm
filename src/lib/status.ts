@@ -1,3 +1,4 @@
+import type { TranslationKey } from '../i18n/translations'
 import type { Profile, Task, TaskStatus, TransitionOption } from './types'
 
 export const TASK_STATUSES: TaskStatus[] = [
@@ -8,43 +9,25 @@ export const TASK_STATUSES: TaskStatus[] = [
   'accepted',
 ]
 
-export const STATUS_META: Record<
-  TaskStatus,
-  {
-    label: string
-    shortLabel: string
-    description: string
-    order: number
-  }
-> = {
+export const STATUS_META: Record<TaskStatus, { labelKey: TranslationKey; order: number }> = {
   new: {
-    label: 'New',
-    shortLabel: 'New',
-    description: 'Ready to be picked up',
+    labelKey: 'status.new',
     order: 3,
   },
   in_progress: {
-    label: 'In progress',
-    shortLabel: 'In progress',
-    description: 'Work is underway',
+    labelKey: 'status.in_progress',
     order: 2,
   },
   under_review: {
-    label: 'Under review',
-    shortLabel: 'Review',
-    description: 'Waiting for a manager decision',
+    labelKey: 'status.under_review',
     order: 1,
   },
   revision_requested: {
-    label: 'Revision requested',
-    shortLabel: 'Revision',
-    description: 'Changes are needed before acceptance',
+    labelKey: 'status.revision_requested',
     order: 0,
   },
   accepted: {
-    label: 'Accepted',
-    shortLabel: 'Accepted',
-    description: 'Approved and complete',
+    labelKey: 'status.accepted',
     order: 4,
   },
 }
@@ -74,11 +57,10 @@ export function getAvailableTransitions(task: Task, profile: Profile | null): Tr
       return [
         {
           to: 'in_progress',
-          label: 'Start work',
-          confirmationTitle: 'Start work on this task?',
-          confirmationBody:
-            'The task will move to In progress. Add an optional note to give the team context.',
-          confirmLabel: 'Start work',
+          labelKey: 'action.startWork',
+          titleKey: 'action.startWorkTitle',
+          bodyKey: 'action.startWorkBody',
+          confirmKey: 'action.startWork',
           requiresComment: false,
           tone: 'neutral',
         },
@@ -88,11 +70,10 @@ export function getAvailableTransitions(task: Task, profile: Profile | null): Tr
       return [
         {
           to: 'under_review',
-          label: 'Submit for review',
-          confirmationTitle: 'Submit this task for review?',
-          confirmationBody:
-            'Your manager will review the completed work and either accept it or request a revision.',
-          confirmLabel: 'Submit for review',
+          labelKey: 'action.submitReview',
+          titleKey: 'action.submitReviewTitle',
+          bodyKey: 'action.submitReviewBody',
+          confirmKey: 'action.submitReview',
           requiresComment: false,
           tone: 'accent',
         },
@@ -102,21 +83,19 @@ export function getAvailableTransitions(task: Task, profile: Profile | null): Tr
       return [
         {
           to: 'accepted',
-          label: 'Accept task',
-          confirmationTitle: 'Accept this task?',
-          confirmationBody:
-            'This marks the work as approved and closes the review cycle. The decision is recorded in the history.',
-          confirmLabel: 'Accept task',
+          labelKey: 'action.accept',
+          titleKey: 'action.acceptTitle',
+          bodyKey: 'action.acceptBody',
+          confirmKey: 'action.accept',
           requiresComment: false,
           tone: 'success',
         },
         {
           to: 'revision_requested',
-          label: 'Request revision',
-          confirmationTitle: 'Request a revision',
-          confirmationBody:
-            'Explain what needs to change. The worker will see your comment and can resume work.',
-          confirmLabel: 'Request revision',
+          labelKey: 'action.requestRevision',
+          titleKey: 'action.requestRevisionTitle',
+          bodyKey: 'action.requestRevisionBody',
+          confirmKey: 'action.requestRevision',
           requiresComment: true,
           tone: 'danger',
         },
@@ -126,11 +105,10 @@ export function getAvailableTransitions(task: Task, profile: Profile | null): Tr
       return [
         {
           to: 'in_progress',
-          label: 'Resume work',
-          confirmationTitle: 'Resume work on this task?',
-          confirmationBody:
-            'The task will return to In progress so you can address the revision request.',
-          confirmLabel: 'Resume work',
+          labelKey: 'action.resume',
+          titleKey: 'action.resumeTitle',
+          bodyKey: 'action.resumeBody',
+          confirmKey: 'action.resume',
           requiresComment: false,
           tone: 'neutral',
         },

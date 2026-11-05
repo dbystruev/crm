@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
+import { useLanguage } from '../i18n/language-context'
 import { cn } from '../lib/utils'
 
 type ModalSize = 'sm' | 'md' | 'lg' | 'xl'
@@ -70,6 +71,7 @@ export function Modal({
   showClose = true,
   closeOnEscape = true,
 }: ModalProps) {
+  const { t } = useLanguage()
   const panelRef = useRef<HTMLDivElement>(null)
   const onCloseRef = useRef(onClose)
   const closeOnEscapeRef = useRef(closeOnEscape)
@@ -215,7 +217,7 @@ export function Modal({
               type="button"
               onClick={onClose}
               className="absolute top-3.5 right-3.5 z-10 grid size-9 place-items-center rounded-full text-muted transition hover:bg-canvas hover:text-ink"
-              aria-label="Close dialog"
+              aria-label={t('common.closeDialog')}
             >
               <X size={18} />
             </button>

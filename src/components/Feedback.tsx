@@ -1,5 +1,6 @@
 import { AlertTriangle, Loader2, RotateCcw } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useLanguage } from '../i18n/language-context'
 import { cn } from '../lib/utils'
 import { Button } from './Button'
 import { Logo } from './Logo'
@@ -8,7 +9,9 @@ export function Spinner({ className, size = 18 }: { className?: string; size?: n
   return <Loader2 size={size} className={cn('animate-spin', className)} />
 }
 
-export function LoadingScreen({ label = 'Loading workspace…' }: { label?: string }) {
+export function LoadingScreen({ label }: { label?: string }) {
+  const { t } = useLanguage()
+
   return (
     <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-canvas">
       <div className="bg-blueprint-light pointer-events-none absolute inset-0 opacity-60" />
@@ -17,7 +20,7 @@ export function LoadingScreen({ label = 'Loading workspace…' }: { label?: stri
         <Logo />
         <div className="flex items-center gap-2.5 text-xs font-medium text-muted">
           <Spinner size={14} className="text-accent" />
-          {label}
+          {label ?? t('common.loading')}
         </div>
       </div>
     </div>
@@ -56,11 +59,13 @@ interface ErrorPanelProps {
 }
 
 export function ErrorPanel({
-  title = 'Could not load this view',
+  title,
   message,
   onRetry,
   className,
 }: ErrorPanelProps) {
+  const { t } = useLanguage()
+
   return (
     <div
       className={cn(
@@ -72,12 +77,12 @@ export function ErrorPanel({
         <AlertTriangle size={20} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-ink">{title}</p>
+        <p className="text-sm font-semibold text-ink">{title ?? t('feedback.couldNotLoad')}</p>
         <p className="mt-1 text-sm leading-6 text-muted">{message}</p>
       </div>
       {onRetry ? (
         <Button variant="secondary" size="sm" icon={<RotateCcw size={14} />} onClick={onRetry}>
-          Try again
+          {t('feedback.tryAgain')}
         </Button>
       ) : null}
     </div>

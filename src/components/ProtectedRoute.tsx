@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { LogOut, RotateCcw } from 'lucide-react'
 import { useAuth } from '../context/auth-context'
-import { errorMessage } from '../lib/utils'
+import { useLanguage } from '../i18n/language-context'
 import { Button } from './Button'
 import { EmptyState, LoadingScreen } from './Feedback'
 import { Logo } from './Logo'
@@ -10,12 +10,13 @@ import { useToast } from './toast-context'
 
 export function ProtectedRoute() {
   const { profile, loading, error, refreshProfile, signOut } = useAuth()
+  const { t, path, errorText } = useLanguage()
   const location = useLocation()
   const { toast } = useToast()
   const [retrying, setRetrying] = useState(false)
 
   if (loading) {
-    return <LoadingScreen label="Opening your workspace…" />
+    return <LoadingScreen label={t('protected.loading')} />
   }
 
   if (!profile && error) {
@@ -28,8 +29,8 @@ export function ProtectedRoute() {
           </div>
           <EmptyState
             icon={<LogOut size={22} />}
-            title="We could not open your workspace"
-            description="Your session is active, but the account profile could not be loaded. Try again, or sign out and use a different account."
+            title={t('protected.errorTitle')}
+            description={t('protected.errorBody')}
             action={
               <div className="flex flex-wrap justify-center gap-2">
                 <Button
@@ -40,12 +41,16 @@ export function ProtectedRoute() {
                     setRetrying(true)
                     void refreshProfile()
                       .catch((caught: unknown) => {
-                        toast({ tone: 'error', title: 'Still unavailable', description: errorMessage(caught) })
+                        toast({
+                          tone: 'error',
+                          title: t('protected.stillUnavailable'),
+                          description: errorText(caught, 'protected.errorFallback'),
+                        })
                       })
                       .finally(() => setRetrying(false))
                   }}
                 >
-                  Try again
+                  {t('common.tryAgain')}
                 </Button>
                 <Button
                   variant="secondary"
@@ -53,20 +58,22 @@ export function ProtectedRoute() {
                     void signOut()
                   }}
                 >
-                  Sign out
+                  {t('common.signOut')}
                 </Button>
               </div>
             }
             className="border-line bg-paper shadow-card"
           />
-          <p className="mt-4 text-center text-xs leading-5 text-muted">{error}</p>
+          <p className="mt-4 text-center text-xs leading-5 text-muted">
+            {errorText(error, 'protected.errorFallback')}
+          </p>
         </div>
       </div>
     )
   }
 
   if (!profile) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />
+    return <Navigate to={path('/login')} replace state={{ from: location.pathname }} />
   }
 
   return <Outlet />

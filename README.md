@@ -22,6 +22,7 @@ The app works in two modes:
   status.
 - Mandatory revision comments and a permanent, read-only status timeline.
 - Worker **My Tasks** queue with a "next task" focus card.
+- English and Russian UI with path-based routing (`/en`, `/ru`).
 - Responsive desktop and mobile layouts.
 - Demo data survives refreshes in `localStorage`; Supabase mode is shared across
   users.
@@ -50,12 +51,37 @@ and realistic history in the browser.
 
 | Account | Email | Password |
 | --- | --- | --- |
-| Manager — Alex Morgan | `manager@objects.test` | `BuildDemo123!` |
-| Worker 1 — Daniel Reyes | `worker1@objects.test` | `BuildDemo123!` |
-| Worker 2 — Maya Chen | `worker2@objects.test` | `BuildDemo123!` |
+| Manager — Alex Morgan | `manager@bystruev.com` | `Crm2026!Manager` |
+| Worker 1 — Daniel Reyes | `worker1@hurated.com` | `Crm2026!Worker1` |
+| Worker 2 — Maya Chen | `worker2@buddian.com` | `Crm2026!Worker2` |
 
 The email/password form also accepts these demo credentials. There is no public
 sign-up.
+
+### Language and routing
+
+The app is available in English and Russian. The language is part of the URL,
+not a hidden client-only setting:
+
+| URL | Language |
+| --- | --- |
+| `/en` | English portfolio |
+| `/ru` | Russian portfolio |
+| `/en/objects/:id` | English site detail |
+| `/ru/my-tasks` | Russian worker queue |
+| `/en/login` | English sign-in |
+| `/ru/login` | Russian sign-in |
+
+Opening `/` redirects to the last language stored in this browser, falling back
+to the browser language and then English. The EN/RU switcher in the navigation
+header keeps the current page while replacing the language prefix. Older
+unprefixed links such as `/objects/:id` or `/my-tasks` redirect to the preferred
+language automatically.
+
+All UI copy, status badges, buttons, modals, validation messages, toasts, and
+known API/auth errors are translated. Dates, due-date labels, and greetings use
+the active locale. Translation strings live in
+[`src/i18n/translations.ts`](src/i18n/translations.ts).
 
 ### Reset the demo
 
@@ -97,8 +123,10 @@ Editor is the simplest path.
 
 For a development or staging project only, paste and run
 [`supabase/seed.sql`](supabase/seed.sql). It creates the same three accounts as
-the local demo, three sites, thirteen tasks, and their history. Every seeded
-account uses `BuildDemo123!`.
+the local demo, three sites, thirteen tasks, and their history. The seeded
+accounts use the domain credentials listed above. Re-running the seed also
+updates existing auth users and email identities to those addresses and
+passwords.
 
 > **Do not run the seed against production.** Its credentials are public in
 > this repository. Keep it for demos, previews, and local Supabase instances.
@@ -240,9 +268,10 @@ src/
   components/       UI primitives, task/object modals, timeline, navigation
   context/          Supabase/demo authentication context
   hooks/            Async data loading
+  i18n/             EN/RU dictionary, language provider, routing and error helpers
   lib/              API switch, demo backend, status rules, Supabase client
   pages/            Login, Objects, ObjectDetail, MyTasks, NotFound
-  App.tsx           Routes and providers
+  App.tsx           Localized routes and providers
 supabase/
   migrations/20260101_init.sql
   seed.sql          Optional development/demo data

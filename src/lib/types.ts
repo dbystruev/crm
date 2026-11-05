@@ -1,3 +1,5 @@
+import type { TranslationKey } from '../i18n/translations'
+
 export type UserRole = 'manager' | 'worker'
 
 export type TaskStatus =
@@ -82,20 +84,20 @@ export type DemoAccountKey = 'manager' | 'worker1' | 'worker2'
 
 export interface DemoAccount {
   key: DemoAccountKey
-  label: string
+  labelKey: TranslationKey
   name: string
   email: string
   password: string
   role: UserRole
-  blurb: string
+  blurbKey: TranslationKey
 }
 
 export interface TransitionOption {
   to: TaskStatus
-  label: string
-  confirmationTitle: string
-  confirmationBody: string
-  confirmLabel: string
+  labelKey: TranslationKey
+  titleKey: TranslationKey
+  bodyKey: TranslationKey
+  confirmKey: TranslationKey
   requiresComment: boolean
   tone: 'neutral' | 'accent' | 'success' | 'danger'
 }

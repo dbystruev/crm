@@ -424,7 +424,7 @@ export function demoSignIn(email: string, password: string): Profile {
   )
   if (!account) {
     throw new Error(
-      'Those credentials do not match a demo account. Use one of the quick-login accounts.',
+      'errors.demoCredentials',
     )
   }
   return demoSignInAs(account.key)
@@ -432,7 +432,7 @@ export function demoSignIn(email: string, password: string): Profile {
 
 export function demoSignInAs(key: DemoAccountKey): Profile {
   const profile = profileById.get(PROFILE_IDS[key])
-  if (!profile) throw new Error('Demo account not found.')
+  if (!profile) throw new Error('errors.demoAccountNotFound')
   window.localStorage.setItem(SESSION_KEY, profile.id)
   return profile
 }
@@ -447,13 +447,13 @@ export function demoSignOut() {
 
 function requireActor(): Profile {
   const actor = getDemoProfile()
-  if (!actor) throw new Error('Your session has expired. Please sign in again.')
+  if (!actor) throw new Error('errors.sessionExpired')
   return actor
 }
 
 function assertManager(actor: Profile) {
   if (actor.role !== 'manager') {
-    throw new Error('Only managers can perform this action.')
+    throw new Error('errors.managerOnly')
   }
 }
 
@@ -465,7 +465,7 @@ function visibleTasks(database: DemoDatabase, actor: Profile) {
 
 function assertTaskAccess(actor: Profile, task: Task) {
   if (actor.role === 'manager' || task.assignee_id === actor.id) return
-  throw new Error('You do not have access to this task.')
+  throw new Error('errors.taskAccess')
 }
 
 function withRelations(task: Task, database: DemoDatabase): TaskWithRelations {
@@ -516,7 +516,7 @@ const demoApi = {
   async getObject(objectId: string): Promise<ObjectWithTasks> {
     const actor = requireActor()
     const object = visibleObjects(readDatabase(), actor).find((item) => item.id === objectId)
-    if (!object) throw new Error('Object not found, or you do not have access to it.')
+    if (!object) throw new Error('errors.objectNotFound')
     return object
   },
 
@@ -560,7 +560,7 @@ const demoApi = {
     assertManager(actor)
     const database = readDatabase()
     const object = database.objects.find((item) => item.id === objectId)
-    if (!object) throw new Error('Object not found.')
+    if (!object) throw new Error('errors.objectNotFound')
     object.name = input.name.trim()
     object.address = input.address.trim()
     object.description = input.description.trim()
@@ -575,7 +575,7 @@ const demoApi = {
     const database = readDatabase()
     const assignee = profileById.get(input.assignee_id)
     if (!assignee || assignee.role !== 'worker') {
-      throw new Error('Tasks can only be assigned to workers.')
+      throw new Error('errors.workerAssignment')
     }
     const now = new Date().toISOString()
     const task: Task = {
@@ -609,10 +609,10 @@ const demoApi = {
     assertManager(actor)
     const database = readDatabase()
     const task = database.tasks.find((item) => item.id === taskId)
-    if (!task) throw new Error('Task not found.')
+    if (!task) throw new Error('errors.taskNotFound')
     const assignee = profileById.get(input.assignee_id)
     if (!assignee || assignee.role !== 'worker') {
-      throw new Error('Tasks can only be assigned to workers.')
+      throw new Error('errors.workerAssignment')
     }
     task.title = input.title.trim()
     task.description = input.description.trim()
@@ -631,26 +631,26 @@ const demoApi = {
     const actor = requireActor()
     const database = readDatabase()
     const task = database.tasks.find((item) => item.id === taskId)
-    if (!task) throw new Error('Task not found.')
+    if (!task) throw new Error('errors.taskNotFound')
     assertTaskAccess(actor, task)
 
     if (actor.role === 'worker' && task.assignee_id !== actor.id) {
-      throw new Error('Workers can only update tasks assigned to them.')
+      throw new Error('errors.workerOwnTasks')
     }
     if (!allowedEdges[task.status].includes(toStatus)) {
-      throw new Error(`Invalid status transition from ${task.status} to ${toStatus}.`)
+      throw new Error('errors.invalidTransition')
     }
     if (toStatus === 'accepted' || toStatus === 'revision_requested') {
       if (actor.role !== 'manager') {
-        throw new Error('Only a manager can accept work or request a revision.')
+        throw new Error('errors.managerDecision')
       }
     } else if (actor.role !== 'worker' || task.assignee_id !== actor.id) {
-      throw new Error('Only the assigned worker can move this task through field work.')
+      throw new Error('errors.assignedWorkerOnly')
     }
 
     const cleanComment = comment.trim()
     if (toStatus === 'revision_requested' && !cleanComment) {
-      throw new Error('A revision request requires a comment.')
+      throw new Error('errors.revisionCommentRequired')
     }
 
     const fromStatus = task.status
@@ -674,7 +674,7 @@ const demoApi = {
     const actor = requireActor()
     const database = readDatabase()
     const task = database.tasks.find((item) => item.id === taskId)
-    if (!task) throw new Error('Task not found.')
+    if (!task) throw new Error('errors.taskNotFound')
     assertTaskAccess(actor, task)
 
     return database.history

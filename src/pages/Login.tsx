@@ -14,12 +14,14 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { useAuth } from '../context/auth-context'
+import { useLanguage } from '../i18n/language-context'
 import { DEMO_ACCOUNTS, SHOW_DEMO_LOGIN } from '../lib/demoAccounts'
 import type { DemoAccount, DemoAccountKey } from '../lib/types'
-import { cn, errorMessage } from '../lib/utils'
+import { cn } from '../lib/utils'
 import { Avatar } from '../components/Avatar'
 import { Button } from '../components/Button'
 import { InlineError, LoadingScreen, Spinner } from '../components/Feedback'
+import { LanguageSwitcher } from '../components/LanguageSwitcher'
 import { Logo } from '../components/Logo'
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -66,8 +68,10 @@ function QuickAccountButton({
   onClick: () => void
   variant: 'manager' | 'worker'
 }) {
+  const { t } = useLanguage()
   const isManager = variant === 'manager'
   const RoleIcon = isManager ? ShieldCheck : HardHat
+  const roleLabel = account.role === 'manager' ? t('roles.manager') : t('roles.worker')
 
   return (
     <button
@@ -90,7 +94,7 @@ function QuickAccountButton({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className={cn('text-xs font-bold', isManager ? 'text-canvas' : 'text-ink')}>
-            {account.label}
+            {t(account.labelKey)}
           </span>
           <span
             className={cn(
@@ -99,15 +103,28 @@ function QuickAccountButton({
             )}
           >
             <RoleIcon size={8} />
-            {account.role}
+            {roleLabel}
           </span>
         </div>
-        <p className={cn('mt-0.5 text-[11px]', isManager ? 'text-canvas/65' : 'text-muted')}>
+        <p
+          className={cn(
+            'mt-0.5 truncate text-[11px]',
+            isManager ? 'text-canvas/65' : 'text-muted',
+          )}
+        >
           {account.name}
           <span className={isManager ? 'text-canvas/35' : 'text-faint'}>
             {' '}
-            · {account.blurb}
+            · {t(account.blurbKey)}
           </span>
+        </p>
+        <p
+          className={cn(
+            'mt-0.5 truncate font-mono text-[9px]',
+            isManager ? 'text-canvas/40' : 'text-faint',
+          )}
+        >
+          {account.email}
         </p>
       </div>
       <span
@@ -132,6 +149,7 @@ function QuickAccountButton({
 
 export function LoginPage() {
   const { profile, loading, isDemo, signIn, signInAs } = useAuth()
+  const { t, path, errorText } = useLanguage()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -142,14 +160,12 @@ export function LoginPage() {
   const [pendingAccount, setPendingAccount] = useState<DemoAccountKey | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  const requestedPath = (location.state as { from?: string } | null)?.from
   const targetPath =
-    (location.state as { from?: string } | null)?.from &&
-    (location.state as { from?: string }).from !== '/login'
-      ? ((location.state as { from?: string }).from as string)
-      : '/'
+    requestedPath && !/^\/(?:en|ru)?\/?login\/?$/.test(requestedPath) ? requestedPath : path('/')
 
   if (loading) {
-    return <LoadingScreen label="Checking your session…" />
+    return <LoadingScreen label={t('login.checkingSession')} />
   }
 
   if (profile) {
@@ -166,7 +182,7 @@ export function LoginPage() {
       await signInAs(account.key)
       navigate(targetPath, { replace: true })
     } catch (caught) {
-      setError(errorMessage(caught, 'Could not sign in with the demo account.'))
+      setError(errorText(caught, 'login.error.demo'))
     } finally {
       setPendingAccount(null)
     }
@@ -180,7 +196,7 @@ export function LoginPage() {
       await signIn(email, password)
       navigate(targetPath, { replace: true })
     } catch (caught) {
-      setError(errorMessage(caught, 'Could not sign in.'))
+      setError(errorText(caught, 'login.error.signIn'))
     } finally {
       setSubmitting(false)
     }
@@ -195,54 +211,52 @@ export function LoginPage() {
         <div className="pointer-events-none absolute -top-32 -right-24 size-[30rem] rounded-full bg-accent/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-48 -left-32 size-[34rem] rounded-full bg-blue/20 blur-3xl" />
 
-        <div className="relative">
+        <div className="relative flex items-center justify-between gap-4">
           <Logo tone="dark" />
+          <LanguageSwitcher tone="dark" />
         </div>
 
         <div className="relative max-w-xl py-12">
           <p className="flex items-center gap-2 font-mono text-[10px] font-medium tracking-[0.22em] text-accent uppercase">
             <span className="h-px w-8 bg-accent" />
-            Construction operations
+            {t('login.hero.eyebrow')}
           </p>
           <h1 className="mt-6 font-display text-5xl leading-[1.02] font-semibold tracking-[-0.045em] text-canvas text-balance xl:text-[4.4rem]">
-            Every site.
+            {t('login.hero.line1')}
             <br />
-            Every task.
+            {t('login.hero.line2')}
             <br />
-            <span className="text-accent">One clear view.</span>
+            <span className="text-accent">{t('login.hero.line3')}</span>
           </h1>
-          <p className="mt-7 max-w-md text-sm leading-7 text-canvas/55">
-            A focused workspace for construction teams. Managers keep the portfolio moving, workers
-            know exactly what is next, and every handover leaves a permanent trail.
-          </p>
+          <p className="mt-7 max-w-md text-sm leading-7 text-canvas/55">{t('login.hero.body')}</p>
 
           <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.035] p-5 backdrop-blur-sm">
             <div className="flex items-center justify-between gap-4">
               <span className="flex items-center gap-2 font-mono text-[9px] font-medium tracking-[0.16em] text-canvas/45 uppercase">
                 <span className="size-1.5 animate-pulse rounded-full bg-emerald-400" />
-                Live workflow
+                {t('login.hero.liveWorkflow')}
               </span>
               <span className="font-mono text-[8.5px] tracking-[0.12em] text-canvas/30 uppercase">
-                Database-enforced
+                {t('login.hero.databaseEnforced')}
               </span>
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-1.5">
-              <FlowNode label="New" />
+              <FlowNode label={t('login.hero.new')} />
               <ArrowRight size={11} className="text-canvas/25" />
-              <FlowNode label="In progress" />
+              <FlowNode label={t('login.hero.inProgress')} />
               <ArrowRight size={11} className="text-canvas/25" />
-              <FlowNode label="Review" tone="accent" />
+              <FlowNode label={t('login.hero.review')} tone="accent" />
               <ArrowRight size={11} className="text-canvas/25" />
-              <FlowNode label="Accepted" tone="success" />
+              <FlowNode label={t('login.hero.accepted')} tone="success" />
             </div>
 
             <div className="mt-3 flex items-center gap-2 border-t border-white/8 pt-3">
               <RotateCcw size={11} className="text-canvas/35" />
               <span className="text-[10px] text-canvas/40">
-                Revision requested
+                {t('login.hero.revisionNote')}
                 <span className="mx-1.5 text-canvas/20">→</span>
-                back to In progress, with a mandatory note
+                {t('login.hero.revisionFlow')}
               </span>
             </div>
           </div>
@@ -250,13 +264,13 @@ export function LoginPage() {
 
         <div className="relative flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[8.5px] font-medium tracking-[0.14em] text-canvas/30 uppercase">
           <span className="flex items-center gap-1.5">
-            <ShieldCheck size={11} /> 2 roles
+            <ShieldCheck size={11} /> {t('login.hero.roles')}
           </span>
           <span className="flex items-center gap-1.5">
-            <CheckCircle2 size={11} /> 5 statuses
+            <CheckCircle2 size={11} /> {t('login.hero.statuses')}
           </span>
           <span className="flex items-center gap-1.5">
-            <RotateCcw size={11} /> Immutable audit trail
+            <RotateCcw size={11} /> {t('login.hero.audit')}
           </span>
         </div>
       </aside>
@@ -268,15 +282,13 @@ export function LoginPage() {
         <div className="relative mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-4 py-8 sm:px-8 sm:py-12">
           <div className="mb-10 flex items-center justify-between lg:hidden">
             <Logo />
-            <span className="flex items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 font-mono text-[8px] font-medium tracking-[0.1em] text-muted uppercase">
-              <span
-                className={cn(
-                  'size-1.5 rounded-full',
-                  isDemo ? 'bg-amber' : 'bg-moss',
-                )}
-              />
-              {isDemo ? 'Local demo' : 'Live'}
-            </span>
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher />
+              <span className="flex items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 font-mono text-[8px] font-medium tracking-[0.1em] text-muted uppercase">
+                <span className={cn('size-1.5 rounded-full', isDemo ? 'bg-amber' : 'bg-moss')} />
+                {isDemo ? t('login.hero.localDemo') : t('login.hero.live')}
+              </span>
+            </div>
           </div>
 
           <div className="mb-7">
@@ -290,16 +302,14 @@ export function LoginPage() {
                 )}
               >
                 <span className={cn('size-1.5 rounded-full', isDemo ? 'bg-amber' : 'bg-moss')} />
-                {isDemo ? 'Local demo workspace' : 'Connected to Supabase'}
+                {isDemo ? t('login.hero.localDemoWorkspace') : t('login.hero.connectedSupabase')}
               </span>
             </div>
 
             <h2 className="font-display text-3xl leading-tight font-semibold tracking-[-0.035em] text-ink text-balance sm:text-4xl">
-              Pick up where the build left off.
+              {t('login.title')}
             </h2>
-            <p className="mt-3 text-sm leading-6 text-muted">
-              Sign in to manage sites, move tasks through review, and keep the crew aligned.
-            </p>
+            <p className="mt-3 text-sm leading-6 text-muted">{t('login.subtitle')}</p>
           </div>
 
           <div className="rounded-[1.75rem] border border-white/80 bg-paper/90 p-5 shadow-card backdrop-blur-sm sm:p-7">
@@ -307,11 +317,11 @@ export function LoginPage() {
               <div>
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-mono text-[9px] font-semibold tracking-[0.16em] text-muted uppercase">
-                    One-click demo access
+                    {t('login.oneClick')}
                   </p>
                   <span className="flex items-center gap-1 rounded-full bg-accent-soft px-2 py-1 font-mono text-[8px] font-medium tracking-[0.08em] text-accent-dark uppercase">
                     <Sparkles size={9} />
-                    No password
+                    {t('login.noPassword')}
                   </span>
                 </div>
 
@@ -340,7 +350,7 @@ export function LoginPage() {
                 <div className="my-6 flex items-center gap-3">
                   <span className="h-px flex-1 bg-line" />
                   <span className="font-mono text-[8px] font-medium tracking-[0.14em] text-faint uppercase">
-                    or sign in with email
+                    {t('login.orEmail')}
                   </span>
                   <span className="h-px flex-1 bg-line" />
                 </div>
@@ -352,7 +362,7 @@ export function LoginPage() {
 
               <div>
                 <label htmlFor="login-email" className="mb-1.5 block text-xs font-semibold text-ink">
-                  Email address
+                  {t('login.email')}
                 </label>
                 <div className="relative">
                   <Mail
@@ -364,7 +374,7 @@ export function LoginPage() {
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@company.com"
+                    placeholder={t('login.emailPlaceholder')}
                     autoComplete="email"
                     required
                     className="w-full rounded-xl border border-line-strong bg-surface py-2.5 pr-3.5 pl-10 text-sm text-ink transition placeholder:text-faint focus:border-accent focus:bg-paper focus:ring-4 focus:ring-accent/10 focus:outline-none"
@@ -375,10 +385,10 @@ export function LoginPage() {
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
                   <label htmlFor="login-password" className="text-xs font-semibold text-ink">
-                    Password
+                    {t('login.password')}
                   </label>
                   <span className="font-mono text-[8px] tracking-[0.1em] text-faint uppercase">
-                    Admin-managed
+                    {t('login.adminManaged')}
                   </span>
                 </div>
                 <div className="relative">
@@ -391,7 +401,7 @@ export function LoginPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    placeholder="Enter your password"
+                    placeholder={t('login.passwordPlaceholder')}
                     autoComplete="current-password"
                     required
                     className="w-full rounded-xl border border-line-strong bg-surface py-2.5 pr-11 pl-10 text-sm text-ink transition placeholder:text-faint focus:border-accent focus:bg-paper focus:ring-4 focus:ring-accent/10 focus:outline-none"
@@ -400,7 +410,7 @@ export function LoginPage() {
                     type="button"
                     onClick={() => setShowPassword((current) => !current)}
                     className="absolute top-1/2 right-2.5 grid size-7 -translate-y-1/2 place-items-center rounded-full text-faint transition hover:bg-canvas hover:text-ink"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
                   >
                     {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
@@ -415,28 +425,24 @@ export function LoginPage() {
                 className="w-full"
                 iconRight={<ArrowRight size={15} />}
               >
-                Sign in
+                {t('login.signIn')}
               </Button>
             </form>
 
             <div className="mt-5 flex items-start gap-2 border-t border-line/80 pt-4">
               <ShieldCheck size={13} className="mt-0.5 shrink-0 text-moss" />
               <p className="text-[10px] leading-4 text-muted">
-                {isDemo
-                  ? 'Local demo mode. Accounts and data live in this browser only. Add Supabase environment variables to connect a secure, shared workspace.'
-                  : 'Access is protected by Supabase Auth. Data visibility and status rules are enforced by database row-level security and triggers.'}
+                {isDemo ? t('login.demoFooter') : t('login.liveFooter')}
               </p>
             </div>
           </div>
 
-          <p className="mt-5 text-center text-[10px] text-faint">
-            Accounts are provisioned by your administrator. There is no public sign-up.
-          </p>
+          <p className="mt-5 text-center text-[10px] text-faint">{t('login.noSignup')}</p>
         </div>
 
         <div className="relative mx-auto flex w-full max-w-lg items-center justify-between px-4 py-5 text-[9px] text-faint sm:px-8">
-          <span>© {CURRENT_YEAR} Objects &amp; Tasks</span>
-          <span className="font-mono tracking-[0.12em] uppercase">Built for the field</span>
+          <span>© {CURRENT_YEAR} {t('brand.name')}</span>
+          <span className="font-mono tracking-[0.12em] uppercase">{t('login.builtForField')}</span>
         </div>
       </main>
     </div>

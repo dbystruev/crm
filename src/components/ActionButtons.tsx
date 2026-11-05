@@ -6,6 +6,7 @@ import {
   RotateCcw,
   Send,
 } from 'lucide-react'
+import { useLanguage } from '../i18n/language-context'
 import { getAvailableTransitions } from '../lib/status'
 import type { Profile, Task, TransitionOption } from '../lib/types'
 import { cn } from '../lib/utils'
@@ -23,7 +24,9 @@ function iconFor(option: TransitionOption) {
   if (option.to === 'accepted') return <CheckCircle2 size={15} />
   if (option.to === 'revision_requested') return <MessageSquareWarning size={15} />
   if (option.to === 'under_review') return <Send size={15} />
-  if (option.to === 'in_progress' && option.label === 'Resume work') return <RotateCcw size={15} />
+  if (option.to === 'in_progress' && option.labelKey === 'action.resume') {
+    return <RotateCcw size={15} />
+  }
   return <Play size={15} />
 }
 
@@ -41,6 +44,7 @@ export function ActionButtons({
   busy = false,
   className,
 }: ActionButtonsProps) {
+  const { t } = useLanguage()
   const options = getAvailableTransitions(task, profile)
 
   if (options.length === 0) {
@@ -49,6 +53,22 @@ export function ActionButtons({
     const isManager = profile?.role === 'manager'
     const waitingForWorker =
       isManager && !isAccepted && !['under_review', 'accepted'].includes(task.status)
+
+    const title = isAccepted
+      ? t('action.acceptedTitle')
+      : task.status === 'under_review' && isWorker
+        ? t('action.waitingReview')
+        : waitingForWorker
+          ? t('action.waitingTeam')
+          : t('action.noActions')
+
+    const body = isAccepted
+      ? t('action.acceptedBody')
+      : task.status === 'under_review'
+        ? t('action.waitingReviewBody')
+        : waitingForWorker
+          ? t('action.waitingTeamBody')
+          : t('action.noActionsBody')
 
     return (
       <div
@@ -66,24 +86,8 @@ export function ActionButtons({
           {isAccepted ? <CheckCircle2 size={15} /> : <Clock3 size={15} />}
         </span>
         <div>
-          <p className="text-xs font-semibold text-ink">
-            {isAccepted
-              ? 'This task is accepted'
-              : task.status === 'under_review' && isWorker
-                ? 'Waiting for manager review'
-                : waitingForWorker
-                  ? 'Waiting for the site team'
-                  : 'No actions available for you'}
-          </p>
-          <p className="mt-0.5 text-xs leading-5 text-muted">
-            {isAccepted
-              ? 'The review cycle is complete. Its full history remains available below.'
-              : task.status === 'under_review'
-                ? 'Your manager will accept the work or send it back with revision notes.'
-                : waitingForWorker
-                  ? 'The assigned worker will move this task through field work and submit it for your review.'
-                  : 'Only the assigned worker can move this task through field work.'}
-          </p>
+          <p className="text-xs font-semibold text-ink">{title}</p>
+          <p className="mt-0.5 text-xs leading-5 text-muted">{body}</p>
         </div>
       </div>
     )
@@ -101,7 +105,7 @@ export function ActionButtons({
           loading={busy}
           className="w-full sm:w-auto"
         >
-          {option.label}
+          {t(option.labelKey)}
         </Button>
       ))}
     </div>

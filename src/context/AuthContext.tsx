@@ -41,20 +41,20 @@ async function fetchProfile(userId: string): Promise<Profile> {
   }
 
   throw new Error(
-    'Your account profile could not be loaded. Ask an administrator to check your profile setup.',
+    'errors.authProfile',
   )
 }
 
 function friendlyAuthError(caught: unknown) {
   const message = errorMessage(caught)
   if (/invalid login credentials/i.test(message)) {
-    return 'Email or password is incorrect. If you are using a new Supabase project, seed the demo accounts first.'
+    return 'errors.authInvalidCredentials'
   }
   if (/email not confirmed/i.test(message)) {
-    return 'This account has not confirmed its email yet. Ask an administrator to confirm it.'
+    return 'errors.authEmailUnconfirmed'
   }
   if (/rate limit|too many requests/i.test(message)) {
-    return 'Too many sign-in attempts. Wait a moment and try again.'
+    return 'errors.authRateLimited'
   }
   return message
 }
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
   const [loading, setLoading] = useState(() => !isDemoMode && Boolean(supabase))
   const [error, setError] = useState<string | null>(() =>
-    !isDemoMode && !supabase ? 'Supabase configuration is missing.' : null,
+    !isDemoMode && !supabase ? 'errors.supabaseMissing' : null,
   )
   const mountedRef = useRef(true)
 
@@ -157,7 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
       })
       if (signInError) throw signInError
-      if (!data.user) throw new Error('Sign-in did not return a user session.')
+      if (!data.user) throw new Error('errors.authMissingUser')
 
       const loadedProfile = await fetchProfile(data.user.id)
       if (mountedRef.current) setProfile(loadedProfile)
@@ -185,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password: account.password,
       })
       if (signInError) throw signInError
-      if (!data.user) throw new Error('Sign-in did not return a user session.')
+      if (!data.user) throw new Error('errors.authMissingUser')
 
       const loadedProfile = await fetchProfile(data.user.id)
       if (mountedRef.current) setProfile(loadedProfile)

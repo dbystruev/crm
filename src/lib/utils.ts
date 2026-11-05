@@ -118,7 +118,7 @@ export function pluralize(count: number, singular: string, plural = `${singular}
   return `${count} ${count === 1 ? singular : plural}`
 }
 
-export function errorMessage(error: unknown, fallback = 'Something went wrong. Please try again.') {
+export function errorMessage(error: unknown, fallback = 'errors.generic') {
   if (error instanceof Error && error.message.trim()) return error.message
   if (typeof error === 'object' && error && 'message' in error) {
     const message = String((error as { message: unknown }).message)
