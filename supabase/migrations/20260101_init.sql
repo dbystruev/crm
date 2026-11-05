@@ -50,6 +50,9 @@ create table if not exists public.objects (
   name text not null check (char_length(btrim(name)) between 1 and 160),
   address text not null check (char_length(btrim(address)) between 1 and 300),
   description text not null default '' check (char_length(description) <= 4000),
+  name_ru text check (name_ru is null or char_length(btrim(name_ru)) between 1 and 160),
+  address_ru text check (address_ru is null or char_length(btrim(address_ru)) between 1 and 300),
+  description_ru text check (description_ru is null or char_length(description_ru) <= 4000),
   created_by uuid not null references public.profiles (id) on delete restrict,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -60,6 +63,8 @@ create table if not exists public.tasks (
   object_id uuid not null references public.objects (id) on delete cascade,
   title text not null check (char_length(btrim(title)) between 1 and 180),
   description text not null default '' check (char_length(description) <= 4000),
+  title_ru text check (title_ru is null or char_length(btrim(title_ru)) between 1 and 180),
+  description_ru text check (description_ru is null or char_length(description_ru) <= 4000),
   assignee_id uuid not null references public.profiles (id) on delete restrict,
   status public.task_status not null default 'new',
   due_date date,

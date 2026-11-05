@@ -2,6 +2,11 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { ChevronDown, ClipboardList, Info, UserRound } from 'lucide-react'
 import { useLanguage } from '../i18n/language-context'
 import { crm } from '../lib/api'
+import {
+  localizedTaskDescription,
+  localizedTaskTitle,
+  nextRussianValue,
+} from '../lib/localized'
 import type { Profile, Task } from '../lib/types'
 import { toDateInputValue } from '../lib/utils'
 import { Button } from './Button'
@@ -35,10 +40,12 @@ function TaskFormModalContent({
   task,
   onSaved,
 }: Omit<TaskFormModalProps, 'open'>) {
-  const { t, errorText } = useLanguage()
+  const { t, errorText, language } = useLanguage()
   const { toast } = useToast()
-  const [title, setTitle] = useState(task?.title ?? '')
-  const [description, setDescription] = useState(task?.description ?? '')
+  const [title, setTitle] = useState(task ? localizedTaskTitle(task, language) : '')
+  const [description, setDescription] = useState(
+    task ? localizedTaskDescription(task, language) : '',
+  )
   const [assigneeId, setAssigneeId] = useState(task?.assignee_id ?? '')
   const [dueDate, setDueDate] = useState(toDateInputValue(task?.due_date))
   const [workers, setWorkers] = useState<Profile[]>([])
@@ -88,30 +95,51 @@ function TaskFormModalContent({
 
     setSaving(true)
     try {
+      const localizedPayload =
+        language === 'ru'
+          ? {
+              title: task?.title ?? title,
+              description: task?.description ?? description,
+              title_ru: nextRussianValue(task?.title, task?.title_ru, title),
+              description_ru: nextRussianValue(
+                task?.description,
+                task?.description_ru,
+                description,
+              ),
+            }
+          : {
+              title,
+              description,
+              title_ru: task?.title_ru ?? null,
+              description_ru: task?.description_ru ?? null,
+            }
+
       if (task) {
         const saved = await crm.updateTask(task.id, {
-          title,
-          description,
+          ...localizedPayload,
           assignee_id: assigneeId,
           due_date: dueDate || null,
         })
         toast({
           tone: 'success',
           title: t('taskForm.toastUpdated'),
-          description: t('taskForm.toastUpdatedBody', { title: saved.title }),
+          description: t('taskForm.toastUpdatedBody', {
+            title: localizedTaskTitle(saved, language),
+          }),
         })
       } else {
         const saved = await crm.createTask({
           object_id: object.id,
-          title,
-          description,
+          ...localizedPayload,
           assignee_id: assigneeId,
           due_date: dueDate || null,
         })
         toast({
           tone: 'success',
           title: t('taskForm.toastCreated'),
-          description: t('taskForm.toastCreatedBody', { title: saved.title }),
+          description: t('taskForm.toastCreatedBody', {
+            title: localizedTaskTitle(saved, language),
+          }),
         })
       }
       onSaved()

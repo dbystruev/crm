@@ -2,6 +2,12 @@ import { useState, type FormEvent } from 'react'
 import { Building2, Info } from 'lucide-react'
 import { useLanguage } from '../i18n/language-context'
 import { crm } from '../lib/api'
+import {
+  localizedObjectAddress,
+  localizedObjectDescription,
+  localizedObjectName,
+  nextRussianValue,
+} from '../lib/localized'
 import type { ConstructionObject } from '../lib/types'
 import { Button } from './Button'
 import { InlineError } from './Feedback'
@@ -23,11 +29,15 @@ export function ObjectModal({ open, ...props }: ObjectModalProps) {
 }
 
 function ObjectModalContent({ onClose, object, onSaved }: Omit<ObjectModalProps, 'open'>) {
-  const { t, errorText } = useLanguage()
+  const { t, errorText, language } = useLanguage()
   const { toast } = useToast()
-  const [name, setName] = useState(object?.name ?? '')
-  const [address, setAddress] = useState(object?.address ?? '')
-  const [description, setDescription] = useState(object?.description ?? '')
+  const [name, setName] = useState(object ? localizedObjectName(object, language) : '')
+  const [address, setAddress] = useState(
+    object ? localizedObjectAddress(object, language) : '',
+  )
+  const [description, setDescription] = useState(
+    object ? localizedObjectDescription(object, language) : '',
+  )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -48,16 +58,43 @@ function ObjectModalContent({ onClose, object, onSaved }: Omit<ObjectModalProps,
 
     setSaving(true)
     try {
+      const payload =
+        language === 'ru'
+          ? {
+              name: object?.name ?? name,
+              address: object?.address ?? address,
+              description: object?.description ?? description,
+              name_ru: nextRussianValue(object?.name, object?.name_ru, name),
+              address_ru: nextRussianValue(object?.address, object?.address_ru, address),
+              description_ru: nextRussianValue(
+                object?.description,
+                object?.description_ru,
+                description,
+              ),
+            }
+          : {
+              name,
+              address,
+              description,
+              name_ru: object?.name_ru ?? null,
+              address_ru: object?.address_ru ?? null,
+              description_ru: object?.description_ru ?? null,
+            }
+
       const saved = object
-        ? await crm.updateObject(object.id, { name, address, description })
-        : await crm.createObject({ name, address, description })
+        ? await crm.updateObject(object.id, payload)
+        : await crm.createObject(payload)
 
       toast({
         tone: 'success',
         title: isEditing ? t('objectForm.toastUpdated') : t('objectForm.toastCreated'),
         description: isEditing
-          ? t('objectForm.toastUpdatedBody', { name: saved.name })
-          : t('objectForm.toastCreatedBody', { name: saved.name }),
+          ? t('objectForm.toastUpdatedBody', {
+              name: localizedObjectName(saved, language),
+            })
+          : t('objectForm.toastCreatedBody', {
+              name: localizedObjectName(saved, language),
+            }),
       })
       onSaved(saved)
       onClose()

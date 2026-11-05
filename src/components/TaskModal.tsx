@@ -13,6 +13,11 @@ import {
 import { useAuth } from '../context/auth-context'
 import { useLanguage } from '../i18n/language-context'
 import { crm } from '../lib/api'
+import {
+  localizedObjectName,
+  localizedTaskDescription,
+  localizedTaskTitle,
+} from '../lib/localized'
 import { latestRevisionComment } from '../lib/status'
 import type {
   Task,
@@ -36,7 +41,7 @@ import { useToast } from './toast-context'
 interface TaskModalProps {
   open: boolean
   task: TaskWithRelations | null
-  object: { id: string; name: string } | null
+  object: { id: string; name: string; name_ru?: string | null } | null
   onClose: () => void
   onTaskUpdated: (task: Task) => void
   onEdit?: (task: TaskWithRelations) => void
@@ -66,7 +71,7 @@ export function TaskModal({
   onEdit,
 }: TaskModalProps) {
   const { profile } = useAuth()
-  const { t, errorText, dueDateInfo, formatDate, formatDateTime } = useLanguage()
+  const { t, errorText, dueDateInfo, formatDate, formatDateTime, language } = useLanguage()
   const { toast } = useToast()
 
   const [currentTask, setCurrentTask] = useState<TaskWithRelations | null>(task)
@@ -123,6 +128,9 @@ export function TaskModal({
   if (!task || !currentTask) return null
 
   const taskObject = object ?? currentTask.object ?? null
+  const taskTitle = localizedTaskTitle(currentTask, language)
+  const taskDescription = localizedTaskDescription(currentTask, language)
+  const taskObjectName = taskObject ? localizedObjectName(taskObject, language) : null
   const due = dueDateInfo(currentTask.due_date, currentTask.status === 'accepted')
   const statusVisual = statusIconStyles[currentTask.status]
   const StatusIcon = statusVisual.Icon
@@ -223,8 +231,8 @@ export function TaskModal({
         }}
         size="lg"
         closeOnEscape={!selectedTransition}
-        eyebrow={taskObject ? t('task.eyebrow', { name: taskObject.name }) : t('task.details')}
-        title={currentTask.title}
+        eyebrow={taskObjectName ? t('task.eyebrow', { name: taskObjectName }) : t('task.details')}
+        title={taskTitle}
         description={
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={currentTask.status} size="md" />
@@ -343,7 +351,7 @@ export function TaskModal({
           </div>
           <div className="rounded-2xl border border-line/80 bg-surface px-4 py-3.5">
             <p className="text-sm leading-6 whitespace-pre-line text-ink-soft">
-              {currentTask.description || t('task.noBrief')}
+              {taskDescription || t('task.noBrief')}
             </p>
           </div>
         </section>

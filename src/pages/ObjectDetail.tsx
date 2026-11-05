@@ -19,6 +19,13 @@ import { useAuth } from '../context/auth-context'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { useLanguage } from '../i18n/language-context'
 import { crm } from '../lib/api'
+import {
+  localizedObjectAddress,
+  localizedObjectDescription,
+  localizedObjectName,
+  localizedTaskDescription,
+  localizedTaskTitle,
+} from '../lib/localized'
 import { sortTasksByPriority, STATUS_META, TASK_STATUSES } from '../lib/status'
 import type { ObjectWithTasks, Task, TaskStatus, TaskWithRelations } from '../lib/types'
 import { cn, progressPercent } from '../lib/utils'
@@ -86,8 +93,10 @@ function TaskRow({
   task: TaskWithRelations
   onOpen: (task: TaskWithRelations) => void
 }) {
-  const { t, dueDateInfo } = useLanguage()
+  const { t, dueDateInfo, language } = useLanguage()
   const due = dueDateInfo(task.due_date, task.status === 'accepted')
+  const taskTitle = localizedTaskTitle(task, language)
+  const taskDescription = localizedTaskDescription(task, language)
 
   return (
     <button
@@ -102,7 +111,7 @@ function TaskRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-3">
           <h3 className="font-display text-sm leading-snug font-semibold tracking-[-0.01em] text-ink transition group-hover:text-accent-dark">
-            {task.title}
+            {taskTitle}
           </h3>
           <ChevronRight
             size={15}
@@ -110,7 +119,7 @@ function TaskRow({
           />
         </div>
         <p className="mt-1 line-clamp-1 text-[11px] leading-5 text-muted">
-          {task.description || t('object.taskNoBrief')}
+          {taskDescription || t('object.taskNoBrief')}
         </p>
         <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
           <StatusBadge status={task.status} />
@@ -186,7 +195,7 @@ function PageSkeleton() {
 export function ObjectDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { profile } = useAuth()
-  const { t, path, dueDateInfo, formatDate, formatDateTime, errorText } = useLanguage()
+  const { t, path, dueDateInfo, formatDate, formatDateTime, errorText, language } = useLanguage()
   const { data: object, loading, refreshing, error, reload, setData } = useAsyncData(
     async () => {
       if (!id) throw new Error('errors.objectMissing')
@@ -229,6 +238,9 @@ export function ObjectDetailPage() {
     )
   }
 
+  const objectName = localizedObjectName(object, language)
+  const objectAddress = localizedObjectAddress(object, language)
+  const objectDescription = localizedObjectDescription(object, language)
   const tasks = object.tasks
   const completed = tasks.filter((task) => task.status === 'accepted').length
   const underReview = tasks.filter((task) => task.status === 'under_review').length
@@ -351,14 +363,14 @@ export function ObjectDetailPage() {
             </div>
 
             <h1 className="mt-4 font-display text-3xl leading-[1.05] font-semibold tracking-[-0.04em] text-ink text-balance sm:text-4xl">
-              {object.name}
+              {objectName}
             </h1>
             <p className="mt-2.5 flex items-start gap-1.5 text-xs leading-5 text-muted sm:text-sm">
               <MapPin size={14} className="mt-0.5 shrink-0 text-faint" />
-              {object.address}
+              {objectAddress}
             </p>
             <p className="mt-4 max-w-2xl text-sm leading-6 whitespace-pre-line text-ink-soft/80">
-              {object.description || t('object.noDescription')}
+              {objectDescription || t('object.noDescription')}
             </p>
 
             <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-line/75 pt-4">
@@ -568,7 +580,7 @@ export function ObjectDetailPage() {
       <TaskModal
         open={Boolean(selectedTask)}
         task={selectedTask}
-        object={{ id: object.id, name: object.name }}
+        object={{ id: object.id, name: objectName }}
         onClose={() => setSelectedTaskId(null)}
         onTaskUpdated={handleTaskUpdated}
         onEdit={isManager ? handleEditTask : undefined}
@@ -579,7 +591,7 @@ export function ObjectDetailPage() {
           <TaskFormModal
             open={taskFormOpen}
             onClose={() => setTaskFormOpen(false)}
-            object={{ id: object.id, name: object.name }}
+            object={{ id: object.id, name: objectName }}
             task={editingTask}
             onSaved={handleTaskFormSaved}
           />

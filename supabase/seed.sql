@@ -10,7 +10,9 @@
 --   worker1@hurated.com  / Crm2026!Worker1
 --   worker2@buddian.com  / Crm2026!Worker2
 --
--- Run AFTER 20260101_init.sql. The quick-login buttons use these credentials.
+-- Run AFTER 20260101_init.sql (and 20260102_localized_content.sql on projects
+-- created before localized content was added). The quick-login buttons use these
+-- credentials.
 -- =============================================================================
 
 begin;
@@ -235,6 +237,29 @@ set name = excluded.name,
     description = excluded.description,
     updated_at = excluded.updated_at;
 
+-- Russian content for the seeded objects. User-created objects may leave these
+-- fields null; the UI falls back to the English columns.
+update public.objects
+set
+  name_ru = 'ЖК «Речной»',
+  address_ru = 'ул. Речная, 14, Кембридж',
+  description_ru = 'Жилой комплекс на 24 квартиры с общим двором, подземной парковкой и кафе на первом этаже. Конструктивные работы завершены, идёт внутренняя отделка.'
+where id = '0b000000-0000-4000-8000-000000000001';
+
+update public.objects
+set
+  name_ru = 'Офис «Хиллкрест»',
+  address_ru = 'Хиллкрест-авеню, 88, Сомервилл',
+  description_ru = 'Полная реконструкция трёхэтажного офисного здания: открытые рабочие пространства, два переговорных блока и новая зона ресепшн.'
+where id = '0b000000-0000-4000-8000-000000000002';
+
+update public.objects
+set
+  name_ru = 'Склад «Нортлайн»',
+  address_ru = 'Нортлайн Индастриал Парк, 5, Медфорд',
+  description_ru = 'Логистический склад с металлокаркасом, полом 1 200 м², четырьмя погрузочными доками и бытовыми помещениями для персонала.'
+where id = '0b000000-0000-4000-8000-000000000003';
+
 -- Reset only the seeded tasks so the file can be re-run safely. Cascades remove
 -- their old history rows.
 delete from public.tasks
@@ -423,6 +448,86 @@ values
     now() - interval '55 days',
     now() - interval '8 days'
   );
+
+-- Russian content for the seeded tasks. User-created tasks may leave these
+-- fields null; the UI falls back to the English columns.
+update public.tasks
+set
+  title_ru = 'Электромонтажные работы — 2 и 3 этажи',
+  description_ru = 'Проложить новые цепи для всех 24 квартир на втором и третьем этажах. Включает маркировку щитов, прокладку кабельных каналов и размещение розеток по чертежу E-204.'
+where id = '7a000000-0000-4000-8000-000000000001';
+
+update public.tasks
+set
+  title_ru = 'Монтаж воздуховодов вентиляции',
+  description_ru = 'Установить приточные и вытяжные воздуховоды в восточном и западном крыльях. Согласовать с электромонтажниками, чтобы избежать пересечений над потолками коридоров.'
+where id = '7a000000-0000-4000-8000-000000000002';
+
+update public.tasks
+set
+  title_ru = 'Каркас акцентной стены — лобби',
+  description_ru = 'Смонтировать каркас акцентной стены двойной высоты в лобби и подготовить основание для отделки дубовыми рейками.'
+where id = '7a000000-0000-4000-8000-000000000003';
+
+update public.tasks
+set
+  title_ru = 'Укладка плитки в санузлах — квартиры 4–8',
+  description_ru = 'Уложить напольную и настенную плитку в квартирах с 4 по 8. Выровнять швы по отметке коридора и защитить готовые поверхности.'
+where id = '7a000000-0000-4000-8000-000000000004';
+
+update public.tasks
+set
+  title_ru = 'Гидроизоляция фундамента',
+  description_ru = 'Нанести подземную мембрану на северную подпорную стену и установить дренажную плиту. Включить примыкание к фундаментным подошвам.'
+where id = '7a000000-0000-4000-8000-000000000005';
+
+update public.tasks
+set
+  title_ru = 'Демонтаж и вывоз мусора',
+  description_ru = 'Демонтировать старые перегородки на 1–3 уровнях, снять отделку и вывезти мусор на отведённую площадку.'
+where id = '7a000000-0000-4000-8000-000000000006';
+
+update public.tasks
+set
+  title_ru = 'Монтаж гипсокартона — восточное крыло',
+  description_ru = 'Смонтировать и зашпаклевать гипсокартон в восточном крыле, включая потолки коридоров и инженерные стояки.'
+where id = '7a000000-0000-4000-8000-000000000007';
+
+update public.tasks
+set
+  title_ru = 'Замена оконных стеклопакетов',
+  description_ru = 'Заменить 14 вышедших из строя стеклопакетов на южном фасаде. Подобрать существующий оттенок и проверить все уплотнения после установки.'
+where id = '7a000000-0000-4000-8000-000000000008';
+
+update public.tasks
+set
+  title_ru = 'Монтаж стойки ресепшн',
+  description_ru = 'Установить стойку ресепшн и полки на задней стене. Перед креплением проверить отверстия для электрики и слаботочных сетей.'
+where id = '7a000000-0000-4000-8000-000000000009';
+
+update public.tasks
+set
+  title_ru = 'Пусконаладка освещения',
+  description_ru = 'Провести пусконаладку контроллеров DALI для открытого этажа и проверить сценарии в двух переговорных комнатах.'
+where id = '7a000000-0000-4000-8000-000000000010';
+
+update public.tasks
+set
+  title_ru = 'Ремонт стальных конструкций погрузочного дока',
+  description_ru = 'Отремонтировать коррозию на двух южных балках погрузочного дока. Заварить, обработать и окрасить по спецификации.'
+where id = '7a000000-0000-4000-8000-000000000011';
+
+update public.tasks
+set
+  title_ru = 'Инспекция противопожарного потолка',
+  description_ru = 'Проверить и сертифицировать противопожарную потолочную систему над основным этажом. Предоставить размеченный план и фотоотчёт.'
+where id = '7a000000-0000-4000-8000-000000000012';
+
+update public.tasks
+set
+  title_ru = 'Наружная облицовка — южный фасад',
+  description_ru = 'Смонтировать и загерметизировать панели наружной облицовки на южном фасаде, включая отливы и угловые планки.'
+where id = '7a000000-0000-4000-8000-000000000013';
 
 -- The insert trigger writes an initial history row for each task. Replace those
 -- with the full, realistic timeline below.

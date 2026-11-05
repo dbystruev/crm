@@ -23,6 +23,7 @@ The app works in two modes:
 - Mandatory revision comments and a permanent, read-only status timeline.
 - Worker **My Tasks** queue with a "next task" focus card.
 - English and Russian UI with path-based routing (`/en`, `/ru`).
+- Seeded sites and tasks have localized English/Russian names, addresses, and descriptions.
 - Responsive desktop and mobile layouts.
 - Demo data survives refreshes in `localStorage`; Supabase mode is shared across
   users.
@@ -105,7 +106,10 @@ use the `service_role` key in this frontend.
 
 Open the Supabase **SQL Editor**, paste the full contents of
 [`supabase/migrations/20260101_init.sql`](supabase/migrations/20260101_init.sql),
-and run it once.
+and run it once. On a project created before localized seed content was added,
+also run
+[`supabase/migrations/20260102_localized_content.sql`](supabase/migrations/20260102_localized_content.sql).
+Fresh installs get the localized columns from the init migration already.
 
 The migration creates:
 
@@ -123,10 +127,11 @@ Editor is the simplest path.
 
 For a development or staging project only, paste and run
 [`supabase/seed.sql`](supabase/seed.sql). It creates the same three accounts as
-the local demo, three sites, thirteen tasks, and their history. The seeded
-accounts use the domain credentials listed above. Re-running the seed also
-updates existing auth users and email identities to those addresses and
-passwords.
+the local demo, three sites, thirteen tasks, and their history. Seeded objects
+and tasks include Russian `*_ru` fields next to the English content, and the UI
+picks the active language automatically. The seeded accounts use the domain
+credentials listed above. Re-running the seed also updates existing auth users
+and email identities to those addresses and passwords.
 
 > **Do not run the seed against production.** Its credentials are public in
 > this repository. Keep it for demos, previews, and local Supabase instances.
@@ -252,8 +257,8 @@ apply a password policy appropriate to your team.
 | Table | Purpose |
 | --- | --- |
 | `profiles` | One row per auth user with display name and `manager`/`worker` role |
-| `objects` | Construction sites |
-| `tasks` | Work items, one assignee, one current status |
+| `objects` | Construction sites; optional `name_ru`, `address_ru`, `description_ru` |
+| `tasks` | Work items, one assignee, one current status; optional `title_ru`, `description_ru` |
 | `task_history` | Append-only status timeline and comments |
 
 `tasks.transition_comment` is a transient hand-off column. The client writes a
@@ -274,7 +279,8 @@ src/
   App.tsx           Localized routes and providers
 supabase/
   migrations/20260101_init.sql
-  seed.sql          Optional development/demo data
+  migrations/20260102_localized_content.sql
+  seed.sql          Optional development/demo data with EN/RU content
 ```
 
 ## Scripts

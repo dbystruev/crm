@@ -67,7 +67,9 @@ interface SeedTask {
   id: string
   objectId: string
   title: string
+  titleRu: string
   description: string
+  descriptionRu: string
   assigneeId: string
   dueInDays: number
   createdDaysAgo: number
@@ -85,8 +87,11 @@ const seedTasks: SeedTask[] = [
     id: '7a000000-0000-4000-8000-000000000001',
     objectId: OBJECT_IDS.riverside,
     title: 'Electrical rough-in — floors 2 & 3',
+    titleRu: 'Электромонтажные работы — 2 и 3 этажи',
     description:
       'Pull new circuits for all 24 units on the second and third floors. Includes panel labeling, conduit runs, and outlet placement per drawing E-204.',
+    descriptionRu:
+      'Проложить новые цепи для всех 24 квартир на втором и третьем этажах. Включает маркировку щитов, прокладку кабельных каналов и размещение розеток по чертежу E-204.',
     assigneeId: WORKER_1_ID,
     dueInDays: 4,
     createdDaysAgo: 18,
@@ -96,8 +101,11 @@ const seedTasks: SeedTask[] = [
     id: '7a000000-0000-4000-8000-000000000002',
     objectId: OBJECT_IDS.riverside,
     title: 'HVAC ductwork installation',
+    titleRu: 'Монтаж воздуховодов вентиляции',
     description:
       'Install supply and return ductwork for the east and west wings. Coordinate with electrical to avoid clashes above corridor ceilings.',
+    descriptionRu:
+      'Установить приточные и вытяжные воздуховоды в восточном и западном крыльях. Согласовать с электромонтажниками, чтобы избежать пересечений над потолками коридоров.',
     assigneeId: WORKER_2_ID,
     dueInDays: -1,
     createdDaysAgo: 27,
@@ -116,8 +124,11 @@ const seedTasks: SeedTask[] = [
     id: '7a000000-0000-4000-8000-000000000003',
     objectId: OBJECT_IDS.riverside,
     title: 'Feature wall framing — lobby',
+    titleRu: 'Каркас акцентной стены — лобби',
     description:
       'Frame the double-height lobby feature wall and prepare backing for the oak slat finish.',
+    descriptionRu:
+      'Смонтировать каркас акцентной стены двойной высоты в лобби и подготовить основание для отделки дубовыми рейками.',
     assigneeId: WORKER_1_ID,
     dueInDays: 7,
     createdDaysAgo: 2,
@@ -127,8 +138,11 @@ const seedTasks: SeedTask[] = [
     id: '7a000000-0000-4000-8000-000000000004',
     objectId: OBJECT_IDS.riverside,
     title: 'Bathroom tile setting — units 4–8',
+    titleRu: 'Укладка плитки в санузлах — квартиры 4–8',
     description:
       'Set floor and wall tile in units 4 through 8. Align grout lines with the corridor datum and protect finished surfaces.',
+    descriptionRu:
+      'Уложить напольную и настенную плитку в квартирах с 4 по 8. Выровнять швы по отметке коридора и защитить готовые поверхности.',
     assigneeId: WORKER_2_ID,
     dueInDays: -2,
     createdDaysAgo: 32,
@@ -148,8 +162,11 @@ const seedTasks: SeedTask[] = [
     id: '7a000000-0000-4000-8000-000000000005',
     objectId: OBJECT_IDS.riverside,
     title: 'Foundation waterproofing',
+    titleRu: 'Гидроизоляция фундамента',
     description:
       'Apply the below-grade membrane to the north retaining wall and install drainage board. Include the tie-in at the footings.',
+    descriptionRu:
+      'Нанести подземную мембрану на северную подпорную стену и установить дренажную плиту. Включить примыкание к фундаментным подошвам.',
     assigneeId: WORKER_1_ID,
     dueInDays: -22,
     createdDaysAgo: 48,
@@ -169,8 +186,11 @@ const seedTasks: SeedTask[] = [
     id: '7a000000-0000-4000-8000-000000000006',
     objectId: OBJECT_IDS.hillcrest,
     title: 'Demolition & debris removal',
+    titleRu: 'Демонтаж и вывоз мусора',
     description:
       'Strip out the old partition walls on levels 1–3, remove finishes, and cart debris to the designated disposal area.',
+    descriptionRu:
+      'Демонтировать старые перегородки на 1–3 уровнях, снять отделку и вывезти мусор на отведённую площадку.',
     assigneeId: WORKER_2_ID,
     dueInDays: -20,
     createdDaysAgo: 65,
@@ -189,8 +209,11 @@ const seedTasks: SeedTask[] = [
     id: '7a000000-0000-4000-8000-000000000007',
     objectId: OBJECT_IDS.hillcrest,
     title: 'Drywall hanging — east wing',
+    titleRu: 'Монтаж гипсокартона — восточное крыло',
     description:
       'Hang and tape drywall across the east wing, including corridor ceilings and service risers.',
+    descriptionRu:
+      'Смонтировать и зашпаклевать гипсокартон в восточном крыле, включая потолки коридоров и инженерные стояки.',
     assigneeId: WORKER_1_ID,
     dueInDays: 1,
     createdDaysAgo: 14,
@@ -200,8 +223,11 @@ const seedTasks: SeedTask[] = [
     id: '7a000000-0000-4000-8000-000000000008',
     objectId: OBJECT_IDS.hillcrest,
     title: 'Window glazing replacement',
+    titleRu: 'Замена оконных стеклопакетов',
     description:
       'Replace 14 failed glazing units on the south façade. Match the existing tint and check all seals after install.',
+    descriptionRu:
+      'Заменить 14 вышедших из строя стеклопакетов на южном фасаде. Подобрать существующий оттенок и проверить все уплотнения после установки.',
     assigneeId: WORKER_2_ID,
     dueInDays: 9,
     createdDaysAgo: 4,
@@ -211,8 +237,11 @@ const seedTasks: SeedTask[] = [
     id: '7a000000-0000-4000-8000-000000000009',
     objectId: OBJECT_IDS.hillcrest,
     title: 'Reception millwork install',
+    titleRu: 'Монтаж стойки ресепшн',
     description:
       'Install the reception desk millwork and back-wall shelving. Verify power/data cut-outs before fixing.',
+    descriptionRu:
+      'Установить стойку ресепшн и полки на задней стене. Перед креплением проверить отверстия для электрики и слаботочных сетей.',
     assigneeId: WORKER_1_ID,
     dueInDays: 2,
     createdDaysAgo: 20,
@@ -231,8 +260,11 @@ const seedTasks: SeedTask[] = [
     id: '7a000000-0000-4000-8000-000000000010',
     objectId: OBJECT_IDS.hillcrest,
     title: 'Lighting control commissioning',
+    titleRu: 'Пусконаладка освещения',
     description:
       'Commission the DALI lighting controls for the open-plan floor and confirm scenes in the two meeting rooms.',
+    descriptionRu:
+      'Провести пусконаладку контроллеров DALI для открытого этажа и проверить сценарии в двух переговорных комнатах.',
     assigneeId: WORKER_2_ID,
     dueInDays: 5,
     createdDaysAgo: 13,
@@ -252,8 +284,11 @@ const seedTasks: SeedTask[] = [
     id: '7a000000-0000-4000-8000-000000000011',
     objectId: OBJECT_IDS.northline,
     title: 'Loading dock steel repairs',
+    titleRu: 'Ремонт стальных конструкций погрузочного дока',
     description:
       'Repair corrosion on the two southern loading dock beams. Weld, treat, and repaint to spec.',
+    descriptionRu:
+      'Отремонтировать коррозию на двух южных балках погрузочного дока. Заварить, обработать и окрасить по спецификации.',
     assigneeId: WORKER_2_ID,
     dueInDays: -1,
     createdDaysAgo: 24,
@@ -263,8 +298,11 @@ const seedTasks: SeedTask[] = [
     id: '7a000000-0000-4000-8000-000000000012',
     objectId: OBJECT_IDS.northline,
     title: 'Fire-rated ceiling inspection',
+    titleRu: 'Инспекция противопожарного потолка',
     description:
       'Inspect and certify the fire-rated ceiling grid above the main floor. Provide a marked-up plan and photo record.',
+    descriptionRu:
+      'Проверить и сертифицировать противопожарную потолочную систему над основным этажом. Предоставить размеченный план и фотоотчёт.',
     assigneeId: WORKER_2_ID,
     dueInDays: 11,
     createdDaysAgo: 6,
@@ -274,8 +312,11 @@ const seedTasks: SeedTask[] = [
     id: '7a000000-0000-4000-8000-000000000013',
     objectId: OBJECT_IDS.northline,
     title: 'Exterior cladding — south elevation',
+    titleRu: 'Наружная облицовка — южный фасад',
     description:
       'Install and seal the exterior cladding panels on the south elevation, including flashings and corner trims.',
+    descriptionRu:
+      'Смонтировать и загерметизировать панели наружной облицовки на южном фасаде, включая отливы и угловые планки.',
     assigneeId: WORKER_2_ID,
     dueInDays: -4,
     createdDaysAgo: 55,
@@ -292,14 +333,17 @@ const seedTasks: SeedTask[] = [
   },
 ]
 
-function buildSeedDatabase(): DemoDatabase {
-  const objects: ConstructionObject[] = [
+const seedObjects: ConstructionObject[] = [
     {
       id: OBJECT_IDS.riverside,
       name: 'Riverside Residences',
+      name_ru: 'ЖК «Речной»',
       address: '14 Riverside Drive, Cambridge',
+      address_ru: 'ул. Речная, 14, Кембридж',
       description:
         'A 24-unit residential block with a shared courtyard, underground parking, and a ground-floor café. Structural work is complete; interior fit-out is underway.',
+      description_ru:
+        'Жилой комплекс на 24 квартиры с общим двором, подземной парковкой и кафе на первом этаже. Конструктивные работы завершены, идёт внутренняя отделка.',
       created_by: MANAGER_ID,
       created_at: dateTimeDaysAgo(120, 8),
       updated_at: dateTimeDaysAgo(4, 16),
@@ -307,9 +351,13 @@ function buildSeedDatabase(): DemoDatabase {
     {
       id: OBJECT_IDS.hillcrest,
       name: 'Hillcrest Workspace',
+      name_ru: 'Офис «Хиллкрест»',
       address: '88 Hillcrest Avenue, Somerville',
+      address_ru: 'Хиллкрест-авеню, 88, Сомервилл',
       description:
         'Full renovation of a three-storey office building: open-plan workspaces, two meeting suites, and a new reception.',
+      description_ru:
+        'Полная реконструкция трёхэтажного офисного здания: открытые рабочие пространства, два переговорных блока и новая зона ресепшн.',
       created_by: MANAGER_ID,
       created_at: dateTimeDaysAgo(82, 8),
       updated_at: dateTimeDaysAgo(1, 14),
@@ -317,15 +365,21 @@ function buildSeedDatabase(): DemoDatabase {
     {
       id: OBJECT_IDS.northline,
       name: 'Northline Warehouse',
+      name_ru: 'Склад «Нортлайн»',
       address: '5 Northline Industrial Park, Medford',
+      address_ru: 'Нортлайн Индастриал Парк, 5, Медфорд',
       description:
         'Steel-frame logistics warehouse with a 1,200 m² floor, four loading docks, and staff facilities.',
+      description_ru:
+        'Логистический склад с металлокаркасом, полом 1 200 м², четырьмя погрузочными доками и бытовыми помещениями для персонала.',
       created_by: MANAGER_ID,
       created_at: dateTimeDaysAgo(48, 8),
       updated_at: dateTimeDaysAgo(8, 12),
     },
-  ]
+]
 
+function buildSeedDatabase(): DemoDatabase {
+  const objects = seedObjects
   const tasks: Task[] = []
   const history: TaskHistoryEntry[] = []
 
@@ -363,7 +417,9 @@ function buildSeedDatabase(): DemoDatabase {
       id: seedTask.id,
       object_id: seedTask.objectId,
       title: seedTask.title,
+      title_ru: seedTask.titleRu,
       description: seedTask.description,
+      description_ru: seedTask.descriptionRu,
       assignee_id: seedTask.assigneeId,
       status: previousStatus,
       due_date: dateOnlyInDays(seedTask.dueInDays),
@@ -376,6 +432,34 @@ function buildSeedDatabase(): DemoDatabase {
   return { objects, tasks, history }
 }
 
+function hydrateLocalizedSeedData(database: DemoDatabase) {
+  const objectRuById = new Map(
+    seedObjects.map((object) => [
+      object.id,
+      {
+        name_ru: object.name_ru,
+        address_ru: object.address_ru,
+        description_ru: object.description_ru,
+      },
+    ]),
+  )
+  for (const object of database.objects) {
+    const localized = objectRuById.get(object.id)
+    if (localized && !object.name_ru) Object.assign(object, localized)
+  }
+
+  const taskRuById = new Map(
+    seedTasks.map((task) => [
+      task.id,
+      { title_ru: task.titleRu, description_ru: task.descriptionRu },
+    ]),
+  )
+  for (const task of database.tasks) {
+    const localized = taskRuById.get(task.id)
+    if (localized && !task.title_ru) Object.assign(task, localized)
+  }
+}
+
 function readDatabase(): DemoDatabase {
   try {
     const raw = window.localStorage.getItem(DATABASE_KEY)
@@ -386,7 +470,9 @@ function readDatabase(): DemoDatabase {
         Array.isArray(parsed.tasks) &&
         Array.isArray(parsed.history)
       ) {
-        return parsed as DemoDatabase
+        const database = parsed as DemoDatabase
+        hydrateLocalizedSeedData(database)
+        return database
       }
     }
   } catch {
@@ -476,7 +562,15 @@ function withRelations(task: Task, database: DemoDatabase): TaskWithRelations {
     assignee: assignee
       ? { id: assignee.id, full_name: assignee.full_name, role: assignee.role }
       : null,
-    object: object ? { id: object.id, name: object.name, address: object.address } : null,
+    object: object
+      ? {
+          id: object.id,
+          name: object.name,
+          address: object.address,
+          name_ru: object.name_ru,
+          address_ru: object.address_ru,
+        }
+      : null,
   }
 }
 
@@ -543,6 +637,9 @@ const demoApi = {
       name: input.name.trim(),
       address: input.address.trim(),
       description: input.description.trim(),
+      name_ru: input.name_ru?.trim() || null,
+      address_ru: input.address_ru?.trim() || null,
+      description_ru: input.description_ru?.trim() || null,
       created_by: actor.id,
       created_at: now,
       updated_at: now,
@@ -564,6 +661,11 @@ const demoApi = {
     object.name = input.name.trim()
     object.address = input.address.trim()
     object.description = input.description.trim()
+    if (input.name_ru !== undefined) object.name_ru = input.name_ru?.trim() || null
+    if (input.address_ru !== undefined) object.address_ru = input.address_ru?.trim() || null
+    if (input.description_ru !== undefined) {
+      object.description_ru = input.description_ru?.trim() || null
+    }
     object.updated_at = new Date().toISOString()
     writeDatabase(database)
     return object
@@ -583,6 +685,8 @@ const demoApi = {
       object_id: input.object_id,
       title: input.title.trim(),
       description: input.description.trim(),
+      title_ru: input.title_ru?.trim() || null,
+      description_ru: input.description_ru?.trim() || null,
       assignee_id: input.assignee_id,
       status: 'new',
       due_date: input.due_date || null,
@@ -616,6 +720,10 @@ const demoApi = {
     }
     task.title = input.title.trim()
     task.description = input.description.trim()
+    if (input.title_ru !== undefined) task.title_ru = input.title_ru?.trim() || null
+    if (input.description_ru !== undefined) {
+      task.description_ru = input.description_ru?.trim() || null
+    }
     task.assignee_id = input.assignee_id
     task.due_date = input.due_date || null
     task.updated_at = new Date().toISOString()

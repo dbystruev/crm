@@ -18,6 +18,7 @@ import { useAuth } from '../context/auth-context'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { useLanguage } from '../i18n/language-context'
 import { crm } from '../lib/api'
+import { localizedObjectAddress, localizedObjectName } from '../lib/localized'
 import { OPEN_STATUSES } from '../lib/status'
 import type { ConstructionObject, ObjectWithTasks } from '../lib/types'
 import { cn, progressPercent } from '../lib/utils'
@@ -97,8 +98,10 @@ function ObjectCard({
   onEdit: (object: ConstructionObject) => void
   canEdit: boolean
 }) {
-  const { t, path, dueDateInfo } = useLanguage()
+  const { t, path, dueDateInfo, language } = useLanguage()
   const theme = coverThemes[index % coverThemes.length]
+  const objectName = localizedObjectName(object, language)
+  const objectAddress = localizedObjectAddress(object, language)
   const completed = object.tasks.filter((task) => task.status === 'accepted').length
   const open = object.tasks.filter((task) => OPEN_STATUSES.includes(task.status)).length
   const review = object.tasks.filter((task) => task.status === 'under_review').length
@@ -117,9 +120,9 @@ function ObjectCard({
       <Link
         to={path(`/objects/${object.id}`)}
         className="absolute inset-0 z-10 rounded-card focus-visible:outline-none"
-        aria-label={t('objects.card.open', { name: object.name })}
+        aria-label={t('objects.card.open', { name: objectName })}
       >
-        <span className="sr-only">{t('objects.card.open', { name: object.name })}</span>
+        <span className="sr-only">{t('objects.card.open', { name: objectName })}</span>
       </Link>
 
       <div className={cn('relative h-36 overflow-hidden', theme.cover)}>
@@ -151,7 +154,7 @@ function ObjectCard({
             type="button"
             onClick={() => onEdit(object)}
             className="absolute top-3 right-3 z-20 grid size-8 place-items-center rounded-full border border-white/10 bg-black/15 text-white/65 backdrop-blur-sm transition hover:bg-white hover:text-ink"
-            aria-label={t('objects.card.edit', { name: object.name })}
+            aria-label={t('objects.card.edit', { name: objectName })}
             title={t('objects.card.editTitle')}
           >
             <Pencil size={13} />
@@ -161,11 +164,11 @@ function ObjectCard({
 
       <div className="flex flex-1 flex-col p-5">
         <h2 className="font-display text-lg leading-snug font-semibold tracking-[-0.025em] text-ink transition group-hover:text-accent-dark">
-          {object.name}
+          {objectName}
         </h2>
         <p className="mt-1 flex items-start gap-1.5 text-[11px] leading-4 text-muted">
           <MapPin size={11} className="mt-0.5 shrink-0 text-faint" />
-          {object.address}
+          {objectAddress}
         </p>
 
         <div className="mt-5">
@@ -269,7 +272,7 @@ function CardSkeleton() {
 
 export function ObjectsPage() {
   const { profile } = useAuth()
-  const { t, path, dueDateInfo, getTodayLabel, greeting, formatShortDate, errorText } =
+  const { t, path, dueDateInfo, getTodayLabel, greeting, formatShortDate, errorText, language } =
     useLanguage()
   const navigate = useNavigate()
 
@@ -305,10 +308,12 @@ export function ObjectsPage() {
 
   const normalizedSearch = search.trim().toLowerCase()
   const filteredObjects = list.filter((object) => {
+    const searchableName = localizedObjectName(object, language).toLowerCase()
+    const searchableAddress = localizedObjectAddress(object, language).toLowerCase()
     const matchesSearch =
       !normalizedSearch ||
-      object.name.toLowerCase().includes(normalizedSearch) ||
-      object.address.toLowerCase().includes(normalizedSearch)
+      searchableName.includes(normalizedSearch) ||
+      searchableAddress.includes(normalizedSearch)
     const matchesFilter =
       filter === 'all' ||
       (filter === 'active' && !objectIsComplete(object)) ||

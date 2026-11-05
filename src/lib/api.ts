@@ -27,13 +27,20 @@ export interface CrmApi {
 }
 
 const OBJECT_SELECT = `
-  id, name, address, description, created_by, created_at, updated_at,
+  *,
   tasks (
-    id, object_id, title, description, assignee_id, status, due_date,
-    created_by, created_at, updated_at,
+    *,
     assignee:profiles!tasks_assignee_id_fkey ( id, full_name, role )
   )
 `
+
+function isMissingLocalizedColumn(message: string | undefined) {
+  return Boolean(
+    message &&
+      /(name_ru|address_ru|description_ru|title_ru)/.test(message) &&
+      /(does not exist|could not find|schema cache)/i.test(message),
+  )
+}
 
 function friendlyDatabaseError(message: string | undefined, fallback: string) {
   if (!message) return new Error(fallback)
@@ -44,6 +51,25 @@ function friendlyDatabaseError(message: string | undefined, fallback: string) {
     return new Error('errors.invalidStatus')
   }
   return new Error(message)
+}
+
+async function runWithLocalizedFallback<T>(
+  run: (
+    payload: Record<string, unknown>,
+  ) => PromiseLike<{ data: T | null; error: { message: string } | null }>,
+  basePayload: Record<string, unknown>,
+  localizedPayload: Record<string, unknown>,
+  fallback: string,
+): Promise<T> {
+  let result = await run(localizedPayload)
+
+  if (result.error && isMissingLocalizedColumn(result.error.message)) {
+    result = await run(basePayload)
+  }
+
+  if (result.error) throw friendlyDatabaseError(result.error.message, fallback)
+  if (!result.data) throw new Error(fallback)
+  return result.data
 }
 
 async function requireUserId() {
@@ -93,7 +119,7 @@ const supabaseApi: CrmApi = {
         `
           *,
           assignee:profiles!tasks_assignee_id_fkey ( id, full_name, role ),
-          object:objects!tasks_object_id_fkey ( id, name, address )
+          object:objects!tasks_object_id_fkey ( * )
         `,
       )
       .eq('assignee_id', userId)
@@ -117,74 +143,115 @@ const supabaseApi: CrmApi = {
   async createObject(input) {
     const userId = await requireUserId()
     const client = requireSupabase()
-    const { data, error } = await client
-      .from('objects')
-      .insert({
-        name: input.name.trim(),
-        address: input.address.trim(),
-        description: input.description.trim(),
-        created_by: userId,
-      })
-      .select()
-      .single()
+    const basePayload = {
+      name: input.name.trim(),
+      address: input.address.trim(),
+      description: input.description.trim(),
+      created_by: userId,
+    }
+    const localizedPayload = {
+      ...basePayload,
+      ...(input.name_ru !== undefined
+        ? { name_ru: input.name_ru?.trim() || null }
+        : {}),
+      ...(input.address_ru !== undefined
+        ? { address_ru: input.address_ru?.trim() || null }
+        : {}),
+      ...(input.description_ru !== undefined
+        ? { description_ru: input.description_ru?.trim() || null }
+        : {}),
+    }
 
-    if (error) throw friendlyDatabaseError(error.message, 'errors.saveObject')
-    return data as ConstructionObject
+    return runWithLocalizedFallback<ConstructionObject>(
+      (payload) => client.from('objects').insert(payload).select().single(),
+      basePayload,
+      localizedPayload,
+      'errors.saveObject',
+    )
   },
 
   async updateObject(objectId, input) {
     const client = requireSupabase()
-    const { data, error } = await client
-      .from('objects')
-      .update({
-        name: input.name.trim(),
-        address: input.address.trim(),
-        description: input.description.trim(),
-      })
-      .eq('id', objectId)
-      .select()
-      .single()
+    const basePayload = {
+      name: input.name.trim(),
+      address: input.address.trim(),
+      description: input.description.trim(),
+    }
+    const localizedPayload = {
+      ...basePayload,
+      ...(input.name_ru !== undefined
+        ? { name_ru: input.name_ru?.trim() || null }
+        : {}),
+      ...(input.address_ru !== undefined
+        ? { address_ru: input.address_ru?.trim() || null }
+        : {}),
+      ...(input.description_ru !== undefined
+        ? { description_ru: input.description_ru?.trim() || null }
+        : {}),
+    }
 
-    if (error) throw friendlyDatabaseError(error.message, 'errors.saveObject')
-    return data as ConstructionObject
+    return runWithLocalizedFallback<ConstructionObject>(
+      (payload) =>
+        client.from('objects').update(payload).eq('id', objectId).select().single(),
+      basePayload,
+      localizedPayload,
+      'errors.saveObject',
+    )
   },
 
   async createTask(input) {
     const userId = await requireUserId()
     const client = requireSupabase()
-    const { data, error } = await client
-      .from('tasks')
-      .insert({
-        object_id: input.object_id,
-        title: input.title.trim(),
-        description: input.description.trim(),
-        assignee_id: input.assignee_id,
-        due_date: input.due_date || null,
-        created_by: userId,
-      })
-      .select()
-      .single()
+    const basePayload = {
+      object_id: input.object_id,
+      title: input.title.trim(),
+      description: input.description.trim(),
+      assignee_id: input.assignee_id,
+      due_date: input.due_date || null,
+      created_by: userId,
+    }
+    const localizedPayload = {
+      ...basePayload,
+      ...(input.title_ru !== undefined
+        ? { title_ru: input.title_ru?.trim() || null }
+        : {}),
+      ...(input.description_ru !== undefined
+        ? { description_ru: input.description_ru?.trim() || null }
+        : {}),
+    }
 
-    if (error) throw friendlyDatabaseError(error.message, 'errors.saveTask')
-    return data as Task
+    return runWithLocalizedFallback<Task>(
+      (payload) => client.from('tasks').insert(payload).select().single(),
+      basePayload,
+      localizedPayload,
+      'errors.saveTask',
+    )
   },
 
   async updateTask(taskId, input) {
     const client = requireSupabase()
-    const { data, error } = await client
-      .from('tasks')
-      .update({
-        title: input.title.trim(),
-        description: input.description.trim(),
-        assignee_id: input.assignee_id,
-        due_date: input.due_date || null,
-      })
-      .eq('id', taskId)
-      .select()
-      .single()
+    const basePayload = {
+      title: input.title.trim(),
+      description: input.description.trim(),
+      assignee_id: input.assignee_id,
+      due_date: input.due_date || null,
+    }
+    const localizedPayload = {
+      ...basePayload,
+      ...(input.title_ru !== undefined
+        ? { title_ru: input.title_ru?.trim() || null }
+        : {}),
+      ...(input.description_ru !== undefined
+        ? { description_ru: input.description_ru?.trim() || null }
+        : {}),
+    }
 
-    if (error) throw friendlyDatabaseError(error.message, 'errors.saveTask')
-    return data as Task
+    return runWithLocalizedFallback<Task>(
+      (payload) => client.from('tasks').update(payload).eq('id', taskId).select().single(),
+      basePayload,
+      localizedPayload,
+      'errors.saveTask',
+    )
   },
 
   async transitionTask(taskId, status, comment) {

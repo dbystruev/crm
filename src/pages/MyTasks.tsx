@@ -16,6 +16,7 @@ import { useAuth } from '../context/auth-context'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { useLanguage } from '../i18n/language-context'
 import { crm } from '../lib/api'
+import { localizedObjectName, localizedTaskTitle } from '../lib/localized'
 import { sortTasksByPriority, STATUS_META, TASK_STATUSES } from '../lib/status'
 import type { Task, TaskStatus, TaskWithRelations } from '../lib/types'
 import { cn, progressPercent } from '../lib/utils'
@@ -71,8 +72,12 @@ function TaskQueueRow({
   task: TaskWithRelations
   onOpen: () => void
 }) {
-  const { t, dueDateInfo } = useLanguage()
+  const { t, dueDateInfo, language } = useLanguage()
   const due = dueDateInfo(task.due_date, task.status === 'accepted')
+  const taskTitle = localizedTaskTitle(task, language)
+  const objectName = task.object
+    ? localizedObjectName(task.object, language)
+    : t('myTasks.objectFallback')
 
   return (
     <button
@@ -89,12 +94,10 @@ function TaskQueueRow({
           <div className="min-w-0">
             <p className="mb-1 flex items-center gap-1.5 font-mono text-[8px] font-medium tracking-[0.1em] text-faint uppercase">
               <MapPin size={9} />
-              <span className="truncate">
-                {task.object?.name ?? t('myTasks.objectFallback')}
-              </span>
+              <span className="truncate">{objectName}</span>
             </p>
             <h3 className="font-display text-sm leading-snug font-semibold tracking-[-0.01em] text-ink transition group-hover:text-accent-dark">
-              {task.title}
+              {taskTitle}
             </h3>
           </div>
           <ChevronRight
@@ -131,7 +134,7 @@ function TaskQueueRow({
 
 export function MyTasksPage() {
   const { profile } = useAuth()
-  const { t, path, dueDateInfo, getTodayLabel, greeting, errorText } = useLanguage()
+  const { t, path, dueDateInfo, getTodayLabel, greeting, errorText, language } = useLanguage()
   const { data: tasks, loading, error, reload, setData } = useAsyncData(
     () => crm.listMyTasks(),
     [],
@@ -184,6 +187,10 @@ export function MyTasksPage() {
   }
 
   const focusDue = focusTask ? dueDateInfo(focusTask.due_date) : null
+  const focusTitle = focusTask ? localizedTaskTitle(focusTask, language) : null
+  const focusObjectName = focusTask?.object
+    ? localizedObjectName(focusTask.object, language)
+    : null
   const readyToWork = openTasks.length - revisions.length - underReview.length
 
   return (
@@ -293,12 +300,12 @@ export function MyTasksPage() {
                       : t('myTasks.focus.review')}
               </p>
               <h2 className="mt-2 max-w-2xl font-display text-xl leading-snug font-semibold tracking-[-0.025em] text-canvas sm:text-2xl">
-                {focusTask.title}
+                {focusTitle}
               </h2>
               <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] text-canvas/50">
                 <span className="inline-flex items-center gap-1.5">
                   <MapPin size={10} />
-                  {focusTask.object?.name ?? t('myTasks.objectFallback')}
+                  {focusObjectName ?? t('myTasks.objectFallback')}
                 </span>
                 <span
                   className={cn(
