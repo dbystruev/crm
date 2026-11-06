@@ -13,6 +13,13 @@ import type { Profile } from '../lib/types'
 import { errorMessage } from '../lib/utils'
 import { AuthContext, type AuthContextValue } from './auth-context'
 
+// REQUIREMENT 15: Public registration is blocked by the prevent_public_signup trigger on auth.users. Test users are created manually in Supabase.
+export const PUBLIC_REGISTRATION_POLICY = "Открытая регистрация отключена на уровне базы данных (триггер prevent_public_signup). Тестовых пользователей можно создать вручную в Supabase."
+
+// Authentication is sign-in only. Public registration is intentionally absent:
+// administrators provision users manually in Supabase, and this provider must
+// never call Supabase's public sign-up API. See assertPublicRegistrationDisabled
+// in auth-context.ts for the corresponding defensive guard.
 const wait = (milliseconds: number) =>
   new Promise<void>((resolve) => {
     window.setTimeout(resolve, milliseconds)

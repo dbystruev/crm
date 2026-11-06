@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ComponentProps, type FormEvent, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import {
   CalendarDays,
   CheckCircle2,
@@ -8,6 +9,7 @@ import {
   MessageSquareWarning,
   Pencil,
   Play,
+  Trash2,
   UserRound,
 } from 'lucide-react'
 import { useAuth } from '../context/auth-context'
@@ -44,7 +46,9 @@ interface TaskModalProps {
   object: { id: string; name: string; name_ru?: string | null } | null
   onClose: () => void
   onTaskUpdated: (task: Task) => void
+  onTaskDeleted?: (taskId: string) => void
   onEdit?: (task: TaskWithRelations) => void
+  variant?: 'modal' | 'page'
 }
 
 const statusIconStyles: Record<TaskStatus, { container: string; Icon: typeof CircleDot }> = {
@@ -62,16 +66,70 @@ const transitionIconStyles: Record<TransitionOption['tone'], string> = {
   danger: 'bg-danger-soft text-danger',
 }
 
+type TaskSurfaceProps = ComponentProps<typeof Modal> & { page: boolean }
+
+// Renders the exact same task card content either as the usual modal or as a
+// standalone page card. The page variant gives the requirement-08 task card a
+// real route while keeping task data, ActionButtons, and HistoryTimeline in one
+// visible layout.
+function TaskSurface({
+  page,
+  children,
+  title,
+  eyebrow,
+  description,
+  icon,
+  bodyClassName,
+  ...modalProps
+}: TaskSurfaceProps) {
+  if (!page) {
+    return (
+      <Modal
+        {...modalProps}
+        title={title}
+        eyebrow={eyebrow}
+        description={description}
+        icon={icon}
+        bodyClassName={bodyClassName}
+      >
+        {children}
+      </Modal>
+    )
+  }
+
+  return (
+    <section className="rounded-card border border-line/80 bg-paper p-5 shadow-card sm:p-7">
+      <div className="flex items-start gap-4">
+        {icon}
+        <div className="min-w-0 flex-1">
+          {eyebrow ? (
+            <p className="font-mono text-[8.5px] font-medium tracking-[0.14em] text-muted uppercase">
+              {eyebrow}
+            </p>
+          ) : null}
+          <h1 className="mt-1 font-display text-2xl leading-tight font-semibold tracking-[-0.03em] text-ink text-balance sm:text-3xl">
+            {title}
+          </h1>
+          {description ? <div className="mt-2.5">{description}</div> : null}
+        </div>
+      </div>
+      <div className={cn('mt-5', bodyClassName ?? 'space-y-5')}>{children}</div>
+    </section>
+  )
+}
+
 export function TaskModal({
   open,
   task,
   object,
   onClose,
   onTaskUpdated,
+  onTaskDeleted,
   onEdit,
+  variant = 'modal',
 }: TaskModalProps) {
   const { profile } = useAuth()
-  const { t, errorText, dueDateInfo, formatDate, formatDateTime, language } = useLanguage()
+  const { t, path, errorText, dueDateInfo, formatDate, formatDateTime, language } = useLanguage()
   const { toast } = useToast()
 
   const [currentTask, setCurrentTask] = useState<TaskWithRelations | null>(task)
@@ -82,6 +140,7 @@ export function TaskModal({
   const [comment, setComment] = useState('')
   const [transitionError, setTransitionError] = useState<string | null>(null)
   const [transitioning, setTransitioning] = useState(false)
+  const [deletingTask, setDeletingTask] = useState(false)
 
   const taskId = task?.id
 
@@ -134,12 +193,38 @@ export function TaskModal({
   const due = dueDateInfo(currentTask.due_date, currentTask.status === 'accepted')
   const statusVisual = statusIconStyles[currentTask.status]
   const StatusIcon = statusVisual.Icon
-  const canEdit = profile?.role === 'manager' && Boolean(onEdit)
+  const isManager = profile?.role === 'manager'
+  const canEdit = isManager && Boolean(onEdit)
   const roleLabel = profile
     ? profile.role === 'manager'
       ? t('roles.manager')
       : t('roles.worker')
     : t('common.viewer')
+
+  const handleDeleteTask = async () => {
+    if (!isManager || deletingTask) return
+    if (!window.confirm(t('task.deleteConfirm', { title: taskTitle }))) return
+
+    setDeletingTask(true)
+    try {
+      await crm.deleteTask(currentTask.id)
+      toast({
+        tone: 'success',
+        title: t('task.toast.deleted'),
+        description: t('task.toast.deletedBody', { title: taskTitle }),
+      })
+      onTaskDeleted?.(currentTask.id)
+      onClose()
+    } catch (caught) {
+      toast({
+        tone: 'error',
+        title: t('task.deleteError'),
+        description: errorText(caught, 'errors.deleteTask'),
+      })
+    } finally {
+      setDeletingTask(false)
+    }
+  }
 
   const handleTransitionSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -224,7 +309,8 @@ export function TaskModal({
 
   return (
     <>
-      <Modal
+      <TaskSurface
+        page={variant === 'page'}
         open={open}
         onClose={() => {
           if (!transitioning) onClose()
@@ -337,17 +423,41 @@ export function TaskModal({
             <h3 className="font-display text-sm font-semibold tracking-[-0.01em] text-ink">
               {t('task.brief')}
             </h3>
-            {canEdit ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={<Pencil size={13} />}
-                onClick={() => onEdit?.(currentTask)}
-                className="-mr-1.5 h-7 px-2 text-[11px]"
-              >
-                {t('task.editDetails')}
-              </Button>
-            ) : null}
+            <div className="flex items-center gap-1">
+              {variant === 'modal' ? (
+                <Link
+                  to={path(`/tasks/${currentTask.id}`)}
+                  className="mr-1 hidden text-[11px] font-semibold text-accent-dark hover:underline sm:inline"
+                >
+                  {t('task.openFullCard')}
+                </Link>
+              ) : null}
+              {canEdit ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={<Pencil size={13} />}
+                  onClick={() => onEdit?.(currentTask)}
+                  className="-mr-1.5 h-7 px-2 text-[11px]"
+                >
+                  {t('task.editDetails')}
+                </Button>
+              ) : null}
+              {isManager ? (
+                <Button
+                  variant="danger-outline"
+                  size="sm"
+                  icon={<Trash2 size={13} />}
+                  onClick={() => {
+                    void handleDeleteTask()
+                  }}
+                  loading={deletingTask}
+                  className="h-7 px-2 text-[11px]"
+                >
+                  {t('task.delete')}
+                </Button>
+              ) : null}
+            </div>
           </div>
           <div className="rounded-2xl border border-line/80 bg-surface px-4 py-3.5">
             <p className="text-sm leading-6 whitespace-pre-line text-ink-soft">
@@ -392,7 +502,7 @@ export function TaskModal({
           </div>
           <HistoryTimeline entries={history} loading={historyLoading} error={historyError} />
         </section>
-      </Modal>
+      </TaskSurface>
 
       <Modal
         open={Boolean(selectedTransition)}

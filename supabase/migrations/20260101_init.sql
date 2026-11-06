@@ -215,9 +215,11 @@ create trigger tasks_set_updated_at
 --
 -- Managers make review decisions only. A worker may move an assigned task
 -- through field work (start, submit, resume) but may not edit task content in
--- the same update. A revision request is rejected unless a non-empty comment is
--- supplied. Trusted administrative SQL (auth.uid() is null) may set any valid
--- edge but cannot skip steps in the graph.
+-- the same update. Requirements 01 and 12: this trigger, together with the
+-- assignee_id = auth.uid() RLS policies, prevents workers from changing another
+-- worker's task or editing fields they do not own. A revision request is rejected
+-- unless a non-empty comment is supplied. Trusted administrative SQL
+-- (auth.uid() is null) may set any valid edge but cannot skip steps in the graph.
 -- -----------------------------------------------------------------------------
 create or replace function public.enforce_task_status_transition()
 returns trigger
@@ -452,6 +454,9 @@ create policy objects_update_manager
 
 -- Tasks: managers see and manage everything. Workers only see and update their
 -- own assigned tasks; the trigger above limits them to status changes.
+-- Requirements 09 and 12: the worker scope is exactly
+-- assignee_id = (select auth.uid()). A worker can never read or update a task
+-- assigned to another worker, even through a direct Supabase API call.
 drop policy if exists tasks_select_visible on public.tasks;
 create policy tasks_select_visible
   on public.tasks
@@ -473,6 +478,7 @@ create policy tasks_insert_manager
   );
 
 drop policy if exists tasks_update_visible on public.tasks;
+-- Requirement 12: the same assignee_id = auth.uid() scope applies to UPDATE.
 create policy tasks_update_visible
   on public.tasks
   for update
@@ -498,9 +504,10 @@ create policy task_history_select_visible
 
 -- -----------------------------------------------------------------------------
 -- API privileges
--- Tighten Supabase's default broad grants. Audit rows cannot be written or
--- changed by clients at all, and objects/tasks cannot be hard-deleted from the
--- app, which keeps the audit trail intact.
+-- Tighten Supabase's default broad grants. Audit rows are never written or
+-- changed directly by clients. Objects and tasks are not deletable here;
+-- manager-only DELETE is added in 20260103_manager_delete_permissions.sql and
+-- cascades through the foreign keys.
 -- -----------------------------------------------------------------------------
 revoke all on table public.profiles from anon, authenticated;
 revoke all on table public.objects from anon, authenticated;

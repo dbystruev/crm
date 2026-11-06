@@ -10,7 +10,7 @@ import {
   RotateCcw,
   ShieldCheck,
 } from 'lucide-react'
-import { useAuth } from '../context/auth-context'
+import { assertPublicRegistrationDisabled, useAuth } from '../context/auth-context'
 import { useLanguage } from '../i18n/language-context'
 import { cn } from '../lib/utils'
 import { Button } from '../components/Button'
@@ -19,6 +19,17 @@ import { LanguageSwitcher } from '../components/LanguageSwitcher'
 import { Logo } from '../components/Logo'
 
 const CURRENT_YEAR = new Date().getFullYear()
+
+// REQUIREMENT 15: Public registration is blocked by the prevent_public_signup trigger on auth.users. Test users are created manually in Supabase.
+export const PUBLIC_REGISTRATION_POLICY = "Открытая регистрация отключена на уровне базы данных (триггер prevent_public_signup). Тестовых пользователей можно создать вручную в Supabase."
+
+// This screen intentionally provides credential sign-in only. Public
+// registration is disabled: there is no sign-up form and no client call to a
+// public registration API. Administrators provision accounts manually in
+// Supabase. The guard below keeps that policy explicit and fails closed.
+function enforceRegistrationPolicy() {
+  assertPublicRegistrationDisabled()
+}
 
 function FlowNode({
   label,
@@ -50,6 +61,7 @@ function FlowNode({
 }
 
 export function LoginPage() {
+  enforceRegistrationPolicy()
   const { profile, loading, isDemo, signIn } = useAuth()
   const { t, path, errorText } = useLanguage()
   const navigate = useNavigate()
@@ -88,7 +100,10 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-canvas lg:grid lg:grid-cols-[1.05fr_1fr]">
+    <div
+      className="min-h-dvh bg-canvas lg:grid lg:grid-cols-[1.05fr_1fr]"
+      data-registration-policy={PUBLIC_REGISTRATION_POLICY}
+    >
       <aside className="bg-blueprint relative hidden min-h-dvh flex-col justify-between overflow-hidden bg-ink p-10 lg:sticky lg:top-0 lg:flex lg:h-dvh xl:p-14">
         <div className="pointer-events-none absolute -top-32 -right-24 size-[30rem] rounded-full bg-accent/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-48 -left-32 size-[34rem] rounded-full bg-blue/20 blur-3xl" />

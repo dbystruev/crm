@@ -18,7 +18,7 @@ import { useAuth } from '../context/auth-context'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { useLanguage } from '../i18n/language-context'
 import { crm } from '../lib/api'
-import { localizedObjectAddress, localizedObjectName } from '../lib/localized'
+import { localizedObjectAddress, localizedObjectName, localizedTaskTitle } from '../lib/localized'
 import { OPEN_STATUSES } from '../lib/status'
 import type { ConstructionObject, ObjectWithTasks } from '../lib/types'
 import { cn, progressPercent } from '../lib/utils'
@@ -26,6 +26,7 @@ import { AvatarStack } from '../components/Avatar'
 import { Button } from '../components/Button'
 import { EmptyState, ErrorPanel, Skeleton, Spinner } from '../components/Feedback'
 import { ObjectModal } from '../components/ObjectModal'
+import { StatusBadge } from '../components/StatusBadge'
 
 type ObjectFilter = 'all' | 'active' | 'complete'
 
@@ -235,6 +236,24 @@ function ObjectCard({
             </span>
           ) : null}
         </div>
+
+        {object.tasks.length > 0 ? (
+          <ul className="mt-3 space-y-1.5 border-t border-line/75 pt-3" aria-label={t('objects.card.taskList')}>
+            {object.tasks.slice(0, 3).map((task) => (
+              <li key={task.id} className="flex min-w-0 items-center justify-between gap-2">
+                <span className="truncate text-[10px] font-medium text-ink-soft">
+                  {localizedTaskTitle(task, language)}
+                </span>
+                <StatusBadge status={task.status} />
+              </li>
+            ))}
+            {object.tasks.length > 3 ? (
+              <li className="text-[9px] text-faint">
+                {t('objects.card.moreTasks', { count: object.tasks.length - 3 })}
+              </li>
+            ) : null}
+          </ul>
+        ) : null}
 
         <div className="mt-auto flex items-center justify-between gap-3 border-t border-line/75 pt-4">
           <AvatarStack

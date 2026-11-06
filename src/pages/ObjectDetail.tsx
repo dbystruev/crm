@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   AlertTriangle,
   ArrowLeft,
@@ -13,6 +13,7 @@ import {
   Plus,
   RotateCcw,
   ShieldCheck,
+  Trash2,
   Users,
 } from 'lucide-react'
 import { useAuth } from '../context/auth-context'
@@ -37,6 +38,7 @@ import { StatusBadge } from '../components/StatusBadge'
 import { statusDotClass } from '../lib/status-styles'
 import { TaskFormModal } from '../components/TaskFormModal'
 import { TaskModal } from '../components/TaskModal'
+import { useToast } from '../components/toast-context'
 
 type TaskFilter = 'all' | TaskStatus
 
@@ -196,6 +198,8 @@ export function ObjectDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { profile } = useAuth()
   const { t, path, dueDateInfo, formatDate, formatDateTime, errorText, language } = useLanguage()
+  const navigate = useNavigate()
+  const { toast } = useToast()
   const { data: object, loading, refreshing, error, reload, setData } = useAsyncData(
     async () => {
       if (!id) throw new Error('errors.objectMissing')
@@ -209,6 +213,7 @@ export function ObjectDetailPage() {
   const [taskFormOpen, setTaskFormOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<TaskWithRelations | null>(null)
   const [objectModalOpen, setObjectModalOpen] = useState(false)
+  const [deletingObject, setDeletingObject] = useState(false)
 
   if (!profile) return null
 
@@ -305,6 +310,39 @@ export function ObjectDetailPage() {
     void reload()
   }
 
+  const handleTaskDeleted = (taskId: string) => {
+    setSelectedTaskId(null)
+    setData((current) =>
+      current
+        ? { ...current, tasks: current.tasks.filter((task) => task.id !== taskId) }
+        : current,
+    )
+  }
+
+  const handleDeleteObject = async () => {
+    if (!isManager || deletingObject) return
+    if (!window.confirm(t('object.deleteConfirm', { name: objectName }))) return
+
+    setDeletingObject(true)
+    try {
+      await crm.deleteObject(object.id)
+      toast({
+        tone: 'success',
+        title: t('object.toastDeleted'),
+        description: t('object.toastDeletedBody', { name: objectName }),
+      })
+      navigate(path('/'))
+    } catch (caught) {
+      toast({
+        tone: 'error',
+        title: t('object.deleteError'),
+        description: errorText(caught, 'errors.deleteObject'),
+      })
+    } finally {
+      setDeletingObject(false)
+    }
+  }
+
   return (
     <div className="animate-fade-in">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -318,6 +356,7 @@ export function ObjectDetailPage() {
 
         <div className="flex flex-wrap items-center gap-2">
           {refreshing ? <Spinner size={13} className="mr-1 text-muted" /> : null}
+          {/* Manager-only actions: edit/delete the object and create tasks. */}
           {isManager ? (
             <>
               <Button
@@ -328,6 +367,18 @@ export function ObjectDetailPage() {
                 className="h-9"
               >
                 {t('object.edit')}
+              </Button>
+              <Button
+                variant="danger-outline"
+                size="sm"
+                icon={<Trash2 size={13} />}
+                onClick={() => {
+                  void handleDeleteObject()
+                }}
+                loading={deletingObject}
+                className="h-9"
+              >
+                {t('object.delete')}
               </Button>
               <Button
                 variant="accent"
@@ -527,6 +578,9 @@ export function ObjectDetailPage() {
         </div>
       ) : null}
 
+      {/* Requirement 07: this visible main-view container lists every associated
+          task as a TaskRow (title, StatusBadge, assignee, due date). The list is
+          always rendered here, not only inside the TaskModal. */}
       <div className="mt-4 space-y-2.5">
         {filteredTasks.length === 0 ? (
           <EmptyState
@@ -583,11 +637,13 @@ export function ObjectDetailPage() {
         object={{ id: object.id, name: objectName }}
         onClose={() => setSelectedTaskId(null)}
         onTaskUpdated={handleTaskUpdated}
+        onTaskDeleted={handleTaskDeleted}
         onEdit={isManager ? handleEditTask : undefined}
       />
 
       {isManager ? (
         <>
+          {/* Manager-only forms: workers never mount task/object create or edit dialogs. */}
           <TaskFormModal
             open={taskFormOpen}
             onClose={() => setTaskFormOpen(false)}

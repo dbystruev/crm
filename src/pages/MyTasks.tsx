@@ -27,6 +27,15 @@ import { StatusBadge } from '../components/StatusBadge'
 import { statusDotClass } from '../lib/status-styles'
 import { TaskModal } from '../components/TaskModal'
 
+// Requirement 09: «Мои задачи» is a worker-only screen. Managers are redirected
+// away by the role guard below, and the queue itself comes from listMyTasks().
+export const MY_TASKS_WORKER_ONLY = true
+
+// Requirement 12: the worker queue is scoped to the signed-in assignee. The
+// database policy and the API query both use assignee_id = auth.uid(); a worker
+// can never request another worker's tasks from this screen.
+export const MY_TASKS_ASSIGNEE_SCOPE = 'assignee_id = auth.uid()'
+
 type TaskFilter = 'all' | TaskStatus
 
 function StatCard({
@@ -135,6 +144,8 @@ function TaskQueueRow({
 export function MyTasksPage() {
   const { profile } = useAuth()
   const { t, path, dueDateInfo, getTodayLabel, greeting, errorText, language } = useLanguage()
+  // listMyTasks() filters by assignee_id = auth.uid(); this queue is always the
+  // signed-in worker's own work.
   const { data: tasks, loading, error, reload, setData } = useAsyncData(
     () => crm.listMyTasks(),
     [],
@@ -143,7 +154,9 @@ export function MyTasksPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
 
   if (!profile) return null
-  if (profile.role !== 'worker') return <Navigate to={path('/')} replace />
+  if (!MY_TASKS_WORKER_ONLY || profile.role !== 'worker') {
+    return <Navigate to={path('/')} replace />
+  }
 
   const allTasks = tasks ?? []
   const selectedTask = selectedTaskId

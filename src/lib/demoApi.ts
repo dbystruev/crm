@@ -622,6 +622,15 @@ const demoApi = {
       .map((task) => withRelations(task, database))
   },
 
+  async getTask(taskId: string): Promise<TaskWithRelations> {
+    const actor = requireActor()
+    const database = readDatabase()
+    const task = database.tasks.find((item) => item.id === taskId)
+    if (!task) throw new Error('errors.taskNotFound')
+    assertTaskAccess(actor, task)
+    return withRelations(task, database)
+  },
+
   async listProfiles(): Promise<Profile[]> {
     requireActor()
     return [...profiles]
@@ -669,6 +678,22 @@ const demoApi = {
     object.updated_at = new Date().toISOString()
     writeDatabase(database)
     return object
+  },
+
+  async deleteObject(objectId: string): Promise<void> {
+    const actor = requireActor()
+    assertManager(actor)
+    const database = readDatabase()
+    const objectIndex = database.objects.findIndex((item) => item.id === objectId)
+    if (objectIndex === -1) throw new Error('errors.objectNotFound')
+
+    const removedTaskIds = new Set(
+      database.tasks.filter((task) => task.object_id === objectId).map((task) => task.id),
+    )
+    database.objects.splice(objectIndex, 1)
+    database.tasks = database.tasks.filter((task) => task.object_id !== objectId)
+    database.history = database.history.filter((entry) => !removedTaskIds.has(entry.task_id))
+    writeDatabase(database)
   },
 
   async createTask(input: TaskInput): Promise<Task> {
@@ -729,6 +754,18 @@ const demoApi = {
     task.updated_at = new Date().toISOString()
     writeDatabase(database)
     return task
+  },
+
+  async deleteTask(taskId: string): Promise<void> {
+    const actor = requireActor()
+    assertManager(actor)
+    const database = readDatabase()
+    const taskIndex = database.tasks.findIndex((item) => item.id === taskId)
+    if (taskIndex === -1) throw new Error('errors.taskNotFound')
+
+    database.tasks.splice(taskIndex, 1)
+    database.history = database.history.filter((entry) => entry.task_id !== taskId)
+    writeDatabase(database)
   },
 
   async transitionTask(

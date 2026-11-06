@@ -17,11 +17,14 @@ export interface CrmApi {
   listObjects(): Promise<ObjectWithTasks[]>
   getObject(objectId: string): Promise<ObjectWithTasks>
   listMyTasks(): Promise<TaskWithRelations[]>
+  getTask(taskId: string): Promise<TaskWithRelations>
   listProfiles(): Promise<Profile[]>
   createObject(input: ObjectInput): Promise<ConstructionObject>
   updateObject(objectId: string, input: ObjectInput): Promise<ConstructionObject>
+  deleteObject(objectId: string): Promise<void>
   createTask(input: TaskInput): Promise<Task>
   updateTask(taskId: string, input: TaskDetailsInput): Promise<Task>
+  deleteTask(taskId: string): Promise<void>
   transitionTask(taskId: string, status: TaskStatus, comment: string): Promise<Task>
   listTaskHistory(taskId: string): Promise<TaskHistoryEntry[]>
 }
@@ -113,6 +116,8 @@ const supabaseApi: CrmApi = {
   async listMyTasks() {
     const userId = await requireUserId()
     const client = requireSupabase()
+    // Requirements 09 and 12: the worker queue is always scoped to the signed-in
+    // user. The matching RLS policy also enforces assignee_id = auth.uid().
     const { data, error } = await client
       .from('tasks')
       .select(
@@ -127,6 +132,25 @@ const supabaseApi: CrmApi = {
 
     if (error) throw friendlyDatabaseError(error.message, 'errors.loadTasks')
     return (data ?? []) as unknown as TaskWithRelations[]
+  },
+
+  async getTask(taskId) {
+    const client = requireSupabase()
+    const { data, error } = await client
+      .from('tasks')
+      .select(
+        `
+          *,
+          assignee:profiles!tasks_assignee_id_fkey ( id, full_name, role ),
+          object:objects!tasks_object_id_fkey ( * )
+        `,
+      )
+      .eq('id', taskId)
+      .maybeSingle()
+
+    if (error) throw friendlyDatabaseError(error.message, 'errors.loadTasks')
+    if (!data) throw new Error('errors.taskNotFound')
+    return data as unknown as TaskWithRelations
   },
 
   async listProfiles() {
@@ -199,6 +223,18 @@ const supabaseApi: CrmApi = {
     )
   },
 
+  async deleteObject(objectId) {
+    const client = requireSupabase()
+    const { data, error } = await client
+      .from('objects')
+      .delete()
+      .eq('id', objectId)
+      .select('id')
+
+    if (error) throw friendlyDatabaseError(error.message, 'errors.deleteObject')
+    if (!data || data.length === 0) throw new Error('errors.permission')
+  },
+
   async createTask(input) {
     const userId = await requireUserId()
     const client = requireSupabase()
@@ -252,6 +288,18 @@ const supabaseApi: CrmApi = {
       localizedPayload,
       'errors.saveTask',
     )
+  },
+
+  async deleteTask(taskId) {
+    const client = requireSupabase()
+    const { data, error } = await client
+      .from('tasks')
+      .delete()
+      .eq('id', taskId)
+      .select('id')
+
+    if (error) throw friendlyDatabaseError(error.message, 'errors.deleteTask')
+    if (!data || data.length === 0) throw new Error('errors.permission')
   },
 
   async transitionTask(taskId, status, comment) {

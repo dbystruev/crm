@@ -11,6 +11,7 @@ import { MyTasksPage } from './pages/MyTasks'
 import { ObjectDetailPage } from './pages/ObjectDetail'
 import { ObjectsPage } from './pages/Objects'
 import { NotFoundPage } from './pages/NotFound'
+import { TaskDetailPage } from './pages/TaskDetail'
 
 function RootRedirect() {
   const { language } = useLanguage()
@@ -54,6 +55,7 @@ export default function App() {
                   <Route element={<AppShell />}>
                     <Route index element={<ObjectsPage />} />
                     <Route path="objects/:id" element={<ObjectDetailPage />} />
+                    <Route path="tasks/:id" element={<TaskDetailPage />} />
                     <Route path="my-tasks" element={<MyTasksPage />} />
                   </Route>
                 </Route>
