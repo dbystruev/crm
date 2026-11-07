@@ -7,7 +7,11 @@
 проводят работу по полевым статусам и получают понятный комментарий, когда
 задачу нужно доработать.
 
-Живой деплой: [crm.bystruev.com](https://crm.bystruev.com)
+Живой сервис: [crm.bystruev.com](https://crm.bystruev.com) ·
+[вход на русском](https://crm.bystruev.com/ru/login)
+
+Видео-демонстрация: [youtu.be/pqW4gMYX3zM](https://youtu.be/pqW4gMYX3zM) ·
+Репозиторий: [github.com/dbystruev/crm](https://github.com/dbystruev/crm)
 
 Приложение работает в двух режимах:
 

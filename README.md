@@ -7,7 +7,11 @@ site portfolio and review completed work. Workers see only the sites and tasks
 assigned to them, move work through the field workflow, and get a clear note
 when something needs rework.
 
-Live deployment: [crm.bystruev.com](https://crm.bystruev.com)
+Live deployment: [crm.bystruev.com](https://crm.bystruev.com) ·
+[Russian sign-in](https://crm.bystruev.com/ru/login)
+
+Video walkthrough: [youtu.be/pqW4gMYX3zM](https://youtu.be/pqW4gMYX3zM) ·
+Repository: [github.com/dbystruev/crm](https://github.com/dbystruev/crm)
 
 The app works in two modes:
 
